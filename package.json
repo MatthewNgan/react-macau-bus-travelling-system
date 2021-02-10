@@ -14,7 +14,7 @@
     "mapbox-gl": "^2.1.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
-    "react-scripts": "https://github.com/MatthewNgan/react-macau-bus-travelling-system/raw/production/react-scripts.zip",
+    "react-scripts": "4.0.2",
     "smoothscroll-polyfill": "^0.4.4",
     "turf": "^3.0.14",
     "web-vitals": "^1.1.0",
