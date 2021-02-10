@@ -54,6 +54,12 @@ class ViewsTab extends React.Component {
     super(props);
   }
 
+  componentDidMount() {
+    document.querySelector('#app').scrollTop = 2;
+    document.querySelector('#root').scrollTop = 2;
+    document.querySelector('body').scrollTop = 2;
+  }
+
   render() {
     return (
       <div className="tabs row fixed-bottom">
