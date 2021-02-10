@@ -77,7 +77,7 @@ class RouteView extends React.Component {
   fetchDyMessage() {
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getDyMessage.html?lang=zh_tw`)
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -105,7 +105,7 @@ class RouteView extends React.Component {
     this.setState({busList: []})
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteAndCompanyList.html?lang=zh_tw`)
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -385,7 +385,7 @@ class RouteModal extends React.Component {
     this.isDataReady.locationData = false;
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${this.state.busRoute}&dir=${this.state.busDirection}`,{signal: this.fetchController.signal})
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -403,7 +403,7 @@ class RouteModal extends React.Component {
     });
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${this.state.busRoute}&dir=${this.state.busDirection}&lang=zh-tw`,{signal: this.fetchController.signal})
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -425,7 +425,7 @@ class RouteModal extends React.Component {
     this.isDataReady.routeData = false;
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteData.html?routeName=${this.state.busRoute}&dir=${this.state.busDirection}&lang=zh-tw`,{signal: this.fetchController.signal})
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -467,7 +467,7 @@ class RouteModal extends React.Component {
     this.isDataReady.bridgeData = false;
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37011/its/Bridge/getTime.html?lang=zh_tw`,{signal: this.fetchController.signal})
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
@@ -484,7 +484,7 @@ class RouteModal extends React.Component {
     
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-this.state.busRoute.length) + this.state.busRoute}&direction=${this.state.busDirection}&indexType=00&device=web`,{signal: this.fetchController.signal})
     .then(response => {
-      if(response.statusText == 'OK' && response.status >= 200 && response.status < 300) {
+      if(response.status >= 200 && response.status < 300) {
           return response.json()
       } else {
           throw new Error('Server/Network Error: ' + response.status)
