@@ -1,6 +1,6 @@
 {
   "name": "react-macau-bus-travelling-system",
-  "version": "0.1.0",
+  "version": "2.0.0",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
@@ -10,12 +10,15 @@
     "@turf/helpers": "^6.3.0",
     "@turf/turf": "^6.3.0",
     "body-scroll-lock": "^3.1.5",
+    "dotenv": "^8.2.0",
     "mapbox-gl": "^2.1.0",
     "react": "^17.0.1",
     "react-dom": "^17.0.1",
     "react-scripts": "4.0.2",
+    "smoothscroll-polyfill": "^0.4.4",
     "turf": "^3.0.14",
-    "web-vitals": "^1.1.0"
+    "web-vitals": "^1.1.0",
+    "worker-loader": "^3.0.7"
   },
   "scripts": {
     "start": "react-scripts start",

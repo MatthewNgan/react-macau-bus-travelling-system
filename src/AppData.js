@@ -1,6 +1,5 @@
 export default {
-  // corsProxy: 'https://cors-anywhere.matthewngan.workers.dev/?', appVersion: 'v1.6',
-  corsProxy: 'http://192.168.0.100:8010/', appVersion: 'v1.6',
+  corsProxy: process.env.REACT_APP_PROXY, appVersion: 'v' + process.env.REACT_APP_VERSION,
   routeMainPoints: {
     '1': ['關閘','媽閣'],
     '1A': ['筷子基街','新口岸/科英布拉街'],
@@ -91,5 +90,6 @@ export default {
     'N4': ['工業園街','筷子基北灣'],
     'N5': ['亞馬喇前地','蝴蝶谷大馬路'],
     'N6': ['澳門大學','科技大學'],
-  }
+  },
+  mainStations: ['C690','M1','M132','M134','M144','M161','M167','M170','M172','M184','M219','M222','M224','M239','M272','M50','M9','T308','T365','M16','T326','T349','C689','T343','M135','M7','T339','M10','M137','M111','M88','M800','T551','T419'],
 };

@@ -36,6 +36,10 @@
     transform: rotate(360deg);
   }
 } */
+:root {
+  --padding-bottom: calc(max(constant(safe-area-inset-bottom), 5px) + 52px);
+  --padding-bottom: calc(max(env(safe-area-inset-bottom), 5px) + 52px);
+}
 * {
   box-sizing: border-box;
   outline: none !important;
@@ -129,11 +133,36 @@ html {
   padding: 5rem;
   align-items: center;
 }
-#reload-modal {
+.notifs {
+  position: absolute;
+  bottom: -100px;
+  padding: 7.5px;
+  width: 100%;
+  height: 8vh;
+  transition: bottom 0.5s ease;
+}
+.notifs.shown {
+  bottom: var(--padding-bottom);
+}
+.notifs-container {
   display: flex;
-  height: 30vh;
-  width: 70vw;
-  padding: 2rem;
+  background-color: rgba(255,255,255,0.8);
+  align-items: center;
+  height: 100%;
+  width: 100%;
+  border-radius: 5px;
+  justify-content: space-between;
+  padding: 0 1rem;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+}
+.notifs-container * {
+  margin: 0;
+  padding: 0;
+}
+
+#update-notifs {
+  display: flex;
   align-items: center;
   justify-content: center;
 }
@@ -206,7 +235,7 @@ html {
   from, to { opacity: 1; }
   50% { opacity: 0.25; }
 }
-@keyframes route-blink-gray {
+@keyframes route-blink {
   from, to { background-color:rgb(110, 110, 110); }
   50% { background-color:rgba(105, 105, 105, 0.375); }
 }
@@ -255,6 +284,7 @@ html {
 }
 .route-bus-marker {
   width: 20px;
+  height: 20px;
   z-index: 3000;
 }
 .route-bus-marker.moving {
@@ -395,9 +425,9 @@ details[open] .route-station-bus-icon.moving {
   transform: scale(0.9);
   color: white;
 }
-.route-live.gray {
-  animation: route-blink-gray 15s linear infinite;
-  -webkit-animation: route-blink-gray 15s linear infinite;
+.route-live {
+  animation: route-blink 15s linear infinite;
+  -webkit-animation: route-blink 15s linear infinite;
 }
 .route-live.green {
   animation: route-blink-green 15s linear infinite;
@@ -572,10 +602,12 @@ details[open] .route-station-bus-icon.moving {
   right: 0;
   transition: all 0.25s linear 0s;
   pointer-events: none;
+  visibility: hidden;
 }
 #route-shadow.route-shadow-shown {
+  visibility: visible;
   pointer-events: auto;
-  backdrop-filter: blur(5px) brightness(0.5);
+  backdrop-filter: brightness(0.5);
   -webkit-backdrop-filter: blur(5px) brightness(0.5);
 }
 .route-station-bus-icon {
@@ -683,7 +715,7 @@ summary .route-station-line {
   transition: background-color 0.2s linear;
   box-shadow: 0 0 1px rgba(83, 83, 83, 0.1);
 }
-.route-traffic.gray .route-station-line {
+.route-traffic .route-station-line {
   background-color: rgb(109, 109, 109)
 }
 .route-traffic.green .route-station-line {
@@ -742,7 +774,6 @@ ul {
   margin-bottom: 10px;
 }
 .logo {
-  border-radius: 2rem;
   height: 8rem;
 }
 .version {
@@ -752,114 +783,117 @@ ul {
 @media (prefers-color-scheme: dark) {
   /* Global Style */
   * {
-      color: white;
+    color: white;
   }
   body,#root {
-      background-color: rgb(18,18,18);
+    background-color: rgb(18,18,18);
   }
   .btn,.btn:hover, .btn * {
-      color: rgb(1,132,255);
+    color: rgb(1,132,255);
   }
   h1 {
-      color: #eee !important;
+    color: #eee !important;
+  }
+  .notifs-container {
+    background-color: rgba(18,18,18,0.9);
   }
   .ptr--text {
-      color: rgba(255,255,255,0.7) !important;
+    color: rgba(255,255,255,0.7) !important;
   }
   .ptr--icon {
-      color: rgba(255,255,255,0.7) !important;
+    color: rgba(255,255,255,0.7) !important;
   }
   .tab * {
-      color: rgb(70, 70, 70);
+    color: rgb(70, 70, 70);
   }
   .tab.active * {
-      color: rgb(43, 219, 110);
-      font-weight: bold;
+    color: rgb(43, 219, 110);
+    font-weight: bold;
   }
   .tabs {
-      background-color: transparent;
-      backdrop-filter: blur(25px) brightness(0.2);
-      -webkit-backdrop-filter: blur(25px) brightness(0.2);
-      border-top: 1px solid #55555555;
-      background-color: #ffffff11;
+    background-color: transparent;
+    backdrop-filter: blur(25px) brightness(0.2);
+    -webkit-backdrop-filter: blur(25px) brightness(0.2);
+    border-top: 1px solid #55555555;
+    background-color: #ffffff11;
   }
   .view-header-top {
-      border-bottom: 1px solid #55555555;
-      background-color: #ffffff11;
-      backdrop-filter: blur(50px) brightness(0.1);
-      -webkit-backdrop-filter: blur(50px) brightness(0.1);
+    border-bottom: 1px solid #55555555;
+    background-color: #ffffff11;
+    backdrop-filter: blur(50px) brightness(0.1);
+    -webkit-backdrop-filter: blur(50px) brightness(0.1);
   }
   /* Route View Style */
   .route-bus-title, .modal, .route-bus-info-container {
-      background-color: #222;
+    background-color: #222;
   }
   details[open] summary {
-      background-color: #333;
+    background-color: #333;
   }
   details[open] .last .route-station-line {
-      background-color: #333 !important;
+    background-color: #333 !important;
   }
   .route-navbar {
-      background-color: #222222aa;
-      backdrop-filter: blur(30px);
-      -webkit-backdrop-filter: blur(30px);
+    background-color: #222222aa;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
   }
   .route-traffic .station-dot circle {
-      color: white;
+    color: white;
   }
-  .route-traffic.gray .route-station-line {
-      background-color: rgb(87, 87, 87);
+  .route-traffic .route-station-line {
+    background-color: rgb(87, 87, 87);
   }
   .route-traffic.green .route-station-line {
-      background-color: rgb(0, 116, 0);
+    background-color: rgb(0, 116, 0);
   }
   .route-traffic.yellow .route-station-line {
-      background-color: rgb(91, 124, 0);
+    background-color: rgb(91, 124, 0);
   }
   .route-traffic.orange .route-station-line {
-      background-color: rgb(129, 127, 0);
+    background-color: rgb(129, 127, 0);
   }
   .route-traffic.red .route-station-line {
-      background-color: rgb(126, 78, 0);
+    background-color: rgb(126, 78, 0);
   }
   .route-traffic.brown .route-station-line {
-      background-color: rgb(126, 15, 0);
+    background-color: rgb(126, 15, 0);
   }
   .route-traffic.last .route-station-line {
-      background-color: #222 !important;
+    background-color: #222 !important;
   }
   .route-map-important-station.origin {
-      background-color: rgb(14, 138, 14);
+    background-color: rgb(14, 138, 14);
   }
   .route-map-important-station.destination {
-      background-color: rgb(149, 42, 23);
+    background-color: rgb(149, 42, 23);
   }
   /* Globan Mapbox Style */
   .mapboxgl-popup-content {
-      background-color: #444 !important;
+    background-color: #444 !important;
   }
   .mapboxgl-popup-anchor-top .mapboxgl-popup-tip {
-      border-bottom-color: #444 !important;
+    border-bottom-color: #444 !important;
   }
   .mapboxgl-popup-anchor-bottom .mapboxgl-popup-tip {
-      border-top-color: #444 !important;
+    border-top-color: #444 !important;
   }
   .mapboxgl-popup-anchor-right .mapboxgl-popup-tip {
-      border-left-color: #444 !important;
+    border-left-color: #444 !important;
   }
   .mapboxgl-popup-anchor-left .mapboxgl-popup-tip {
-      border-right-color: #444 !important;
+    border-right-color: #444 !important;
   }
   .mapboxgl-popup-anchor-top-right .mapboxgl-popup-tip {
-      border-bottom-color: #444 !important;
+    border-bottom-color: #444 !important;
   }
   .mapboxgl-popup-anchor-bottom-right .mapboxgl-popup-tip {
-      border-top-color: #444 !important;
+    border-top-color: #444 !important;
   }
   .mapboxgl-popup-anchor-top-left .mapboxgl-popup-tip {
-      border-bottom-color: #444 !important;
+    border-bottom-color: #444 !important;
   }
   .mapboxgl-popup-anchor-bottom-left .mapboxgl-popup-tip {
-      border-top-color: #444 !important;
+    border-top-color: #444 !important;
   }
 }
