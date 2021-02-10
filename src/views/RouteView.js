@@ -303,8 +303,10 @@ class RouteModal extends React.Component {
     details.forEach(detail => {
       detail.removeAttribute('open');
     });
+    this.bridgeRoute = {};
     this.isDataReady = {
       busData: false,
+      bridgeData: false,
       locationData: false,
       routeData: false,
       routeTraffic: false,
@@ -512,7 +514,7 @@ class RouteModal extends React.Component {
           } else {
             direction = 1;
           }
-          let onbridge = undefined;
+          let onbridge;
           for (let point of tempData.slice()[parseInt(bridgeRoute)].routeCoordinates.split(';')) {
             if (point != '') {
               let loc = point.split(',')
