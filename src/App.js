@@ -24,8 +24,8 @@ class App extends React.Component {
     },5)
   }
 
-  handleNetworkError = () => {
-    this.setState({networkError: true})
+  handleNetworkError = (b) => {
+    this.setState({networkError: b})
   }
 
   reloadHandler = (b) => {
@@ -42,6 +42,7 @@ class App extends React.Component {
         <AboutView currentView={this.state.currentView}></AboutView>
         <ViewsTab currentView={this.state.currentView} changeView={this.changeView}></ViewsTab>
         <SkipWaitingNotifs isReloading={this.state.isReloading} reload={this.reloadHandler}></SkipWaitingNotifs>
+        <InternetErrorNotifs networkError={this.state.networkError} isReloading={this.state.isReloading} reload={this.reloadHandler}></InternetErrorNotifs>
       </div>
     );
   }
@@ -98,10 +99,26 @@ class SkipWaitingNotifs extends React.Component {
 
   render() {
     return (
-      <div id="update-notifs" className="notifs text-center">
+      <div className={`notifs text-center`}>
         <div className="notifs-container">
           <p>有新版本可供更新</p>
           <ReloadButton isReloading={this.props.isReloading} reload={this.props.reload} text="重新載入"></ReloadButton>
+        </div>
+      </div>
+    );
+  }
+}
+
+class InternetErrorNotifs extends React.Component {
+  constructor(props) {
+    super(props);
+  }
+
+  render() {
+    return (
+      <div className={`notifs text-center${this.props.networkError ? ' shown' : ''}`}>
+        <div className="notifs-container">
+          <p>網路連接發生錯誤，請檢查網路</p>
         </div>
       </div>
     );

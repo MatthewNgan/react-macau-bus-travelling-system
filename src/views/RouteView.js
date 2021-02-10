@@ -84,6 +84,7 @@ class RouteView extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       let messages = [];
       for (let item of data.data) {
         let startTime = Date.parse(item.startTime.replace(' ','T') + '+08:00');
@@ -97,7 +98,7 @@ class RouteView extends React.Component {
     })
     .catch(error => {
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     })
   }
 
@@ -112,11 +113,12 @@ class RouteView extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       this.setState({busList: data.data.routeList});
     })
     .catch(error => {
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
   }
 
@@ -394,14 +396,16 @@ class RouteModal extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       this.isDataReady.busData = true;
       this.setState({
         busData: data.data
       })
     })
     .catch(error => {
+      this.isDataReady.busData = true;
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${this.state.busRoute}&dir=${this.state.busDirection}&lang=zh-tw`,{signal: this.fetchController.signal})
     .then(response => {
@@ -412,14 +416,16 @@ class RouteModal extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       this.isDataReady.locationData = true;
       this.setState({
         locationData: data.data,
       })
     })
     .catch(error => {
+      this.isDataReady.locationData = true;
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
   }
 
@@ -434,6 +440,7 @@ class RouteModal extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       for (let i = 0; i < data.data.routeInfo.length-2; i++) {
         if (data.data.routeInfo.slice()[i].staCode[0] != data.data.routeInfo.slice()[i+1].staCode[0] && data.data.routeInfo.slice()[i].staCode[0] != 'C' && data.data.routeInfo.slice()[i+1].staCode[0] != 'C') {
           this.bridgeRoute[i] = [data.data.routeInfo.slice()[i].staCode[0],data.data.routeInfo.slice()[i+1].staCode[0]];
@@ -459,8 +466,9 @@ class RouteModal extends React.Component {
       })
     })
     .catch(error => {
+      this.isDataReady.routeData = true;
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
   }
 
@@ -476,12 +484,14 @@ class RouteModal extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       this.isDataReady.bridgeData = true;
       this.setState({bridgeData: data.data.timeArray})
     })
     .catch(error => {
+      this.isDataReady.bridgeData = true;
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
     
     fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-this.state.busRoute.length) + this.state.busRoute}&direction=${this.state.busDirection}&indexType=00&device=web`,{signal: this.fetchController.signal})
@@ -493,6 +503,7 @@ class RouteModal extends React.Component {
       }
     })
     .then(data => {
+      this.props.handleNetworkError(false);
       let tempData = data.data;
       this.waitUntil(() => {
         let jamRouteIndex = this.state.busData.routeInfo.findIndex((sta) => sta.staCode.includes('M84'));
@@ -543,8 +554,9 @@ class RouteModal extends React.Component {
       },false)
     })
     .catch(error => {
+      this.isDataReady.routeTraffic = true;
       console.log(error);
-      this.props.handleNetworkError();
+      this.props.handleNetworkError(true);
     });
   }
   

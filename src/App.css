@@ -140,6 +140,7 @@ html {
   width: 100%;
   height: 8vh;
   transition: bottom 0.5s ease;
+  z-index: 9999;
 }
 .notifs.shown {
   bottom: var(--padding-bottom);
@@ -159,12 +160,6 @@ html {
 .notifs-container * {
   margin: 0;
   padding: 0;
-}
-
-#update-notifs {
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 .tab {
   display: flex;
