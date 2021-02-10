@@ -519,7 +519,7 @@ class RouteModal extends React.Component {
           }
         }
         for (let bridgeRoute in this.bridgeRoute) {
-          let direction = undefined;
+          let direction = null;
           if (this.bridgeRoute[bridgeRoute][0] === 'T') {
             direction = 0;
           } else {
@@ -1041,7 +1041,7 @@ class RouteModal extends React.Component {
     this.currentOpenedIndex = index;
     this.getArrivingBuses(this.currentOpenedIndex);
     let details = document.querySelectorAll('details');
-    if (this.currentPopup != undefined && this.stationLayerGroup) this.stationLayerGroup.slice().reverse()[this.currentPopup].getPopup().remove();
+    if (this.currentPopup != null && this.stationLayerGroup) this.stationLayerGroup.slice().reverse()[this.currentPopup].getPopup().remove();
     if (details?.[index]?.hasAttribute('open')) {
       this.focusingStation = true;
       if (this.state.isMapEnabled && this.busMap && this.stationLayerGroup) {
@@ -1052,7 +1052,7 @@ class RouteModal extends React.Component {
   }
 
   unfocusStation() {
-    this.currentPopup = undefined;
+    this.currentPopup = null;
     this.focusingStation = false;
     setTimeout(() => {
       if (this.state.isMapEnabled && this.busMap && !this.focusingStation) {
