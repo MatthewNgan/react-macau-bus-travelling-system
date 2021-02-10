@@ -2,7 +2,7 @@
 
 由一名中學生用 :heart: 製作嘅巴士報站 Web App (React Version)
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/f53a85cd-b088-4732-a90d-31d1502490d8/deploy-status)](https://app.netlify.com/sites/agitated-swanson-fba885/deploys) 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/943b6b14-903f-4729-b227-adda5047b54f/deploy-status)](https://app.netlify.com/sites/elastic-bardeen-6fdf70/deploys)
 
 連結：https://bus.matthewngan.ga/
 
