@@ -76,9 +76,6 @@ body,#root {
   left: 0;
   background-color: rgb(229,229,234);
 }
-body,#root > * {
-  margin-bottom: 5px;
-}
 .btn,.btn:hover,.btn * {
   color: rgb(0,122,255);
   transition: opacity 0.15s linear;
@@ -188,10 +185,10 @@ html {
 }
 .view {
   display: none;
-  margin-bottom: calc(constant(safe-area-inset-top) + 52px);
-  margin-bottom: calc(env(safe-area-inset-top) + 52px);
-  min-height: calc(100% - constant(safe-area-inset-top) - 52px);
-  min-height: calc(100% - env(safe-area-inset-top) - 52px);
+  margin-bottom: calc(constant(safe-area-inset-top) + 57px);
+  margin-bottom: calc(env(safe-area-inset-top) + 57px);
+  min-height: calc(100% - 2 * constant(safe-area-inset-top) - 57px - 25px - 1rem);
+  min-height: calc(100% - 2 * env(safe-area-inset-top) - 57px - 25px - 1rem);
   position: relative;
 }
 .view.active {

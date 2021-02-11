@@ -2,6 +2,7 @@ import './App.css';
 import React from 'react';
 import RouteView from './views/RouteView'
 import AboutView from './views/AboutView'
+import StationView from './views/StationView'
 
 class App extends React.Component {
 
@@ -35,11 +36,18 @@ class App extends React.Component {
     }
   }
 
+  componentDidUpdate(prevState) {
+    if (prevState.currentView !== this.state.currentView) {
+      document.querySelector('#app').scroll({top: 0});
+    }
+  }
+
   render() {
     return (
       <div id="app">
         <RouteView handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></RouteView>
         <AboutView currentView={this.state.currentView}></AboutView>
+        <StationView currentView={this.state.currentView}></StationView>
         <ViewsTab currentView={this.state.currentView} changeView={this.changeView}></ViewsTab>
         <SkipWaitingNotifs isReloading={this.state.isReloading} reload={this.reloadHandler}></SkipWaitingNotifs>
         <InternetErrorNotifs networkError={this.state.networkError} isReloading={this.state.isReloading} reload={this.reloadHandler}></InternetErrorNotifs>
@@ -80,20 +88,35 @@ class ViewsTab extends React.Component {
                 <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
                 <path d="M8.93 6.588l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
               </svg>
-              :
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-info-circle-fill" viewBox="0 0 16 16">
+              : <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-info-circle-fill" viewBox="0 0 16 16">
                 <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412l-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
               </svg>
             }
           </div>
           <div>關於</div>
         </div>
-        <div className="col-4 tab">
+        <div className={`col-4 tab${this.props.currentView === 'station' ? ' active': ''}`}>
+          <div>
+            {
+              this.props.currentView !== 'station' ?
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt" viewBox="0 0 16 16">
+                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
+                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              </svg>
+              : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+              </svg>
+            }
+          </div>
+          <div>開發中</div>
+          {/* <div>站點</div> */}
+        </div>
+        {/* <div className="col-3 tab">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-three-dots" viewBox="0 0 16 16">
             <path d="M3 9.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm5 0a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3z"/>
           </svg>
           <div>開發中</div>
-        </div>
+        </div> */}
       </div>
     );
   }
