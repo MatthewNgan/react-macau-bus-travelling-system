@@ -28,7 +28,7 @@ class UpdateChecker extends React.Component {
   }
 
   componentDidMount() {
-    fetch('https://raw.githubusercontent.com/MatthewNgan/react-macau-bus-travelling-system/production/package.json')
+    fetch('https://raw.githubusercontent.com/MatthewNgan/react-macau-bus-travelling-system/production/package.json', {cache: "no-store"})
     .then(response => response.json())
     .then(data => this.setState({latestVersion: data.version}))
     .catch(() => this.setState({cannotCheck: true}));
