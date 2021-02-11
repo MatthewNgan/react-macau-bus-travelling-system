@@ -36,7 +36,7 @@ class App extends React.Component {
     }
   }
 
-  componentDidUpdate(prevState) {
+  componentDidUpdate(prevProps,prevState) {
     if (prevState.currentView !== this.state.currentView) {
       document.querySelector('#app').scroll({top: 0});
     }
@@ -95,7 +95,7 @@ class ViewsTab extends React.Component {
           </div>
           <div>關於</div>
         </div>
-        <div className={`col-4 tab${this.props.currentView === 'station' ? ' active': ''}`}>
+        <div className={`col-4 tab${this.props.currentView === 'station' ? ' active': ''}`} onClick={() => this.props.changeView('station')}>
           <div>
             {
               this.props.currentView !== 'station' ?

@@ -5,6 +5,9 @@ class AboutView extends React.Component {
   render() {
     return (
       <div className={`view${this.props.currentView === 'about' ? ' active' : ''}`}>
+        <header className='view-header-top fixed-top row justify-content-md-center'>
+          <h6 className='col-auto'>關於</h6>
+        </header>
         <div className="main-about-view">
           <header>
             <img src={require('../images/icons/rounded-logo.png').default} className="logo" alt="Logo" />

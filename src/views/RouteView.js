@@ -174,11 +174,11 @@ class RouteView extends React.Component {
   render() {
     return (
       <div className={`view${this.props.currentView === 'route' ? ' active' : ''}`} id='route-view'>
-        <header className='view-header-top route-view-header fixed-top row justify-content-md-center'>
+        <header className='view-header-top fixed-top row justify-content-md-center'>
           <h6 className='col-auto'>路線查詢</h6>
           <div className='route-options'>
             {this.state.messages.length > 0 && 
-              <button className='route-info btn' id='toggleInfoBox'>
+              <button className='route-info btn' id='toggleInfoBox' aria-label='Messages Button'>
                 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-info-circle-fill' viewBox='0 0 16 16'>
                   <path fillRule='evenodd' d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z'/>
                 </svg>
@@ -205,7 +205,7 @@ class RouteView extends React.Component {
               this.state.busList.length > 0
               ?
               <div className='row'>
-                {this.state.busList.map(route => <button key={route.routeName} className={`route-bus col-md-1 col-2 btn ${route.color.toLowerCase()}`} onClick={() => this.requestRoute(route.routeName, route.color)}>{route.routeName}</button>)}
+                {this.state.busList.map(route => <button key={route.routeName} aria-label={`Route ${route.routeName}`} className={`route-bus col-md-1 col-2 btn ${route.color.toLowerCase()}`} onClick={() => this.requestRoute(route.routeName, route.color)}>{route.routeName}</button>)}
               </div>
               :
               <div className='route-loading'>
@@ -292,6 +292,7 @@ class RouteModal extends React.Component {
   }
 
   busIconSrc = () => { return require(`../images/icons/${this.state.busColor?.toLowerCase()}-bus-icon.png`).default }
+  lastBusIconSrc = () => { return require(`../images/icons/${this.state.busColor?.toLowerCase()}-bus-icon-last.png`).default }
 
   changeDirection() {
     this.fetchController.abort();
@@ -879,9 +880,10 @@ class RouteModal extends React.Component {
             }
           }
           this.busLayerGroup = [];
-          for (let bus of this.state.locationData.busInfoList.slice()) {
+          for (let bus of this.state.locationData.busInfoList.slice().filter(bus => bus.speed > -1)) {
             let busElement = document.createElement('img');
-            busElement.src = this.busIconSrc();
+            if (bus.busPlate === this.state.busData?.lastBusPlate) busElement.src = this.lastBusIconSrc();
+            else busElement.src = this.busIconSrc();
             busElement.classList.add('route-bus-marker');
             busElement.id = `bus-${bus.busPlate.substring(0,2)}-${bus.busPlate.substring(2,4)}-${bus.busPlate.substring(4,6)}`;
             for (let sta of this.state.busData.routeInfo) {
@@ -1210,7 +1212,7 @@ class RouteModal extends React.Component {
             <div className='route-option-buttons'>
               {
                 this.state.directionAvailable === '0' &&
-                <button onClick={() => this.changeDirection()} type='button' className='col-auto btn' id='route-changedirection-icon' aria-label='change direction icon button'>
+                <button onClick={() => this.changeDirection()} type='button' className='col-auto btn' id='route-changedirection-icon' aria-label='Change Direction Button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-down-up' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z'/>
                   </svg>
@@ -1218,7 +1220,7 @@ class RouteModal extends React.Component {
               }
               {
                 this.state.isRouteChanged && 
-                <button className='btn' onClick={() => this.scrollToWarning()}>
+                <button className='btn' onClick={() => this.scrollToWarning()} aria-label='Scroll to warning button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-exclamation-triangle-fill' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/>
                   </svg>
@@ -1226,12 +1228,12 @@ class RouteModal extends React.Component {
               }
               {
                 this.state.isMapEnabled ?
-                <button className='btn' onClick={() => this.disableMap()}>
+                <button className='btn' onClick={() => this.disableMap()} aria-label='Disable Map button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map-fill' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.402-.08a.498.498 0 0 0-.196 0L5 14.09zm5 .8V1.91l.402.08a.5.5 0 0 0 .196 0L11 1.91v12.98l-.5.1-.5-.1z'/>
                   </svg>
                 </button>
-                : <button className='btn' onClick={() => this.enableMap()}>
+                : <button className='btn' onClick={() => this.enableMap()} aria-label='Enable Map button'>
                     <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map' viewBox='0 0 16 16'>
                       <path fillRule='evenodd' d='M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.502.502 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103zM10 1.91l-4-.8v12.98l4 .8V1.91zm1 12.98l4-.8V1.11l-4 .8v12.98zm-6-.8V1.11l-4 .8v12.98l4-.8z'/>
                     </svg>
@@ -1245,6 +1247,7 @@ class RouteModal extends React.Component {
               <div className='col route-bus-info-container'>
                 <RouteStationBlock
                   busIconSrc={this.busIconSrc}
+                  lastBusIconSrc={this.lastBusIconSrc}
                   busData={this.state.busData}
                   color={this.state.busColor}
                   routeData={this.state.routeData.routeInfo}
@@ -1342,6 +1345,7 @@ class RouteStationBlock extends React.Component {
   render() {
     const arrivingBuses = this.props.arrivingBuses;
     const busIconSrc = this.props.busIconSrc();
+    const lastBusIconSrc = this.props.lastBusIconSrc();
     const busData = this.props.busData;
     const color = this.props.color;
     const routeData = this.props.routeData;
@@ -1359,14 +1363,14 @@ class RouteStationBlock extends React.Component {
                       `route-station-dot${busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
-                    <span className='route-station-name'>{station.staCode} {station.staName}</span>
+                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code>{station.laneName}</code> : ''}</span>
                     {
                       busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 0 &&
                       <span className={`route-station-bus-icon moving ${color.toLowerCase()}`}>
                           {
                             busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 1 ?
                             <span>{busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length}</span>
-                            : <img src={busIconSrc} />
+                            : (busData?.lastBusPlate === busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0')[0].busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                           }
                       </span>
                     }
@@ -1376,7 +1380,7 @@ class RouteStationBlock extends React.Component {
                         {
                           busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 1 ?
                           <span>{busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length}</span>
-                          : <img src={busIconSrc} />
+                          : (busData?.lastBusPlate === busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1')[0].busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                         }
                       </span>
                     }
@@ -1428,7 +1432,7 @@ class RouteStationBlock extends React.Component {
                     busData?.routeInfo?.[index]?.busInfo.filter(bus => bus.status === '0').map(bus => {
                       return (
                         <li key={bus.busPlate} className='route-left'>
-                          <img src={busIconSrc} />
+                          {bus.busPlate === busData?.lastBusPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />}
                           <span><code className={color.toLowerCase()}>{bus.busPlate.substring(0,2)}-{bus.busPlate.substring(2,4)}-{bus.busPlate.substring(4,6)}</code></span>
                           <span className='route-time-remaining'>前往下一站中</span>
                         </li>
