@@ -30,7 +30,7 @@ export function register(config) {
     }
 
     window.addEventListener('load', () => {
-      const swUrl = `${process.env.PUBLIC_URL}/sw.js`;
+      const swUrl = `${process.env.PUBLIC_URL}/service-worker.js`;
 
       if (isLocalhost) {
         // This is running on localhost. Let's check if a service worker still exists or not.
@@ -55,20 +55,25 @@ function registerValidSW(swUrl, config) {
   navigator.serviceWorker
     .register(swUrl)
     .then((registration) => {
+      if (registration.waiting != null) {
+        document.querySelector('#update-notifs .reload').addEventListener('click', () => {
+          registration.waiting.postMessage({type: 'SKIP_WAITING'});
+        })
+      }
       registration.onupdatefound = () => {
         const installingWorker = registration.installing;
         if (installingWorker == null) {
           return;
         }
+        document.querySelector('#update-notifs .reload').addEventListener('click', () => {
+          installingWorker.postMessage({type: 'SKIP_WAITING'});
+        })
         installingWorker.onstatechange = () => {
           if (installingWorker.state === 'installed') {
             if (navigator.serviceWorker.controller) {
               // At this point, the updated precached content has been fetched,
               // but the previous service worker will still serve the older
               // content until all client tabs are closed.
-              document.querySelector('#update-notifs .reload').addEventListener('click', () => {
-                installingWorker.postMessage({type: 'SKIP_WAITING'});
-              })
               document.querySelector('#update-notifs').classList.add('shown');
               console.log(
                 'New content is available and will be used when all ' +

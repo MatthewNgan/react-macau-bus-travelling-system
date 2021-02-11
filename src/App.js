@@ -55,9 +55,11 @@ class ViewsTab extends React.Component {
   }
 
   componentDidMount() {
-    document.querySelector('#app').scrollTop = 2;
-    document.querySelector('#root').scrollTop = 2;
-    document.querySelector('body').scrollTop = 2;
+    setTimeout(() => {
+      document.querySelector('#app').scroll({top: 2});
+      document.querySelector('#root').scroll({top: 2});
+      document.querySelector('body').scroll({top: 2});
+    }, 50);
   }
 
   render() {
@@ -105,7 +107,7 @@ class SkipWaitingNotifs extends React.Component {
 
   render() {
     return (
-      <div className={`notifs text-center`}>
+      <div className={`notifs text-center`} id="update-notifs">
         <div className="notifs-container">
           <p>有新版本可供更新</p>
           <ReloadButton isReloading={this.props.isReloading} reload={this.props.reload} text="重新載入"></ReloadButton>

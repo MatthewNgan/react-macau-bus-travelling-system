@@ -765,11 +765,16 @@ ul {
   height: 100%;
   width: 100%;
 }
-.main-about-view > * {
-  margin-bottom: 10px;
+.main-about-view header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+.main-about-view header > * {
+  margin-right: 10px;
 }
 .logo {
-  height: 8rem;
+  height: calc((1.625rem + 4.5vw) * 1.2 + .875em);
 }
 .version {
   padding: 0 !important;

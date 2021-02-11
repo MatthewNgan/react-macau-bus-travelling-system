@@ -601,11 +601,20 @@ class RouteModal extends React.Component {
               this.stationLayerGroup.slice().reverse()[i].getElement().style.removeProperty('opacity');
             }
           }
+          let busPlateWithSameDistance = [];
+          for (let arrivingBus of  this.state.arrivingBuses[index].slice()){
+            if (arrivingBus.stopsRemaining === this.state.arrivingBuses[index][0].stopsRemaining) {
+              busPlateWithSameDistance.push(arrivingBus.plate);
+            }
+          }
+          let busElementGoingToShow = [...document.querySelectorAll('.route-bus-marker')].filter(bus => {
+            return busPlateWithSameDistance.includes(bus.id.replace('bus-',''));
+          });
           for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            if (!busElement.id.includes(this.state.arrivingBuses[index][0].plate)) {
-              busElement.style.setProperty('display', 'none', 'important');
+            if (!busElementGoingToShow.includes(busElement)) {
+              busElement.style.setProperty('visibility', 'hidden');
             } else {
-              busElement.style.removeProperty('display');
+              busElement.style.removeProperty('visibility');
             }
           }
         } else {
@@ -625,7 +634,7 @@ class RouteModal extends React.Component {
             this.stationLayerGroup.slice().reverse()[i].getElement().style.removeProperty('opacity');
           }
           for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            busElement.style.removeProperty('display');
+            busElement.style.removeProperty('visibility');
           }
         }
       }
@@ -648,7 +657,7 @@ class RouteModal extends React.Component {
                   'plate': `${comingBus.busPlate.substring(0,2)}-${comingBus.busPlate.substring(2,4)}-${comingBus.busPlate.substring(4,6)}`,
                   // 'plate': comingBus.busPlate,
                   'speed': comingBus.speed,
-                  'distanceToThis': i + 1,
+                  'stopsRemaining': i + 1,
                   'durationGet': true,
                   'duration': this.props.calculateTime(this.state.routeTraffic,index-i,index,[busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].longitude,busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].latitude],comingBus),
                   'routeTraffic': routeTraffic,
@@ -879,9 +888,9 @@ class RouteModal extends React.Component {
             busElement.style.height = (this.busMap.getZoom() + 1.5).toString() + 'px';
           }
           if (this.focusingStation && !busElement.id.includes(this.state.arrivingBuses[this.currentOpenedIndex]?.[0]?.plate)) {
-            busElement.style.setProperty('display', 'none', 'important');
+            busElement.style.setProperty('visibility', 'hidden');
           } else {
-            busElement.style.removeProperty('display');
+            busElement.style.removeProperty('visibility');
           }
           let busPopup = new mapboxgl.Popup({closeButton: false, offset: 12}).setHTML(`<code class='${this.state.busColor.toLowerCase()}'>` + bus.busPlate + '</code>' + (bus.speed === '-1' ? '' : ` ${bus.speed}km/h`));
           let busMarker = new mapboxgl.Marker(busElement).setLngLat([bus.longitude, bus.latitude]).setPopup(busPopup).addTo(this.busMap);
@@ -1068,7 +1077,7 @@ class RouteModal extends React.Component {
           this.busMap.getSource('route').setData(routeSource);
         }
         for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-          busElement.style.removeProperty('display');
+          busElement.style.removeProperty('visibility');
         }
       }
     }, 50)
@@ -1362,7 +1371,7 @@ class RouteStationBlock extends React.Component {
                     arrivingBuses?.[index]?.slice().reverse().map(arrivingBus => {
                       return (
                         <li key={arrivingBus.plate}>
-                          <span><code className={color.toLowerCase()}>{arrivingBus.plate}</code> 距離 {arrivingBus.distanceToThis} 站</span> 
+                          <span><code className={color.toLowerCase()}>{arrivingBus.plate}</code> 距離 {arrivingBus.stopsRemaining} 站</span> 
                           <span className={
                             `route-time-remaining route-live${parseFloat(arrivingBus.routeTraffic) <= 1 && parseFloat(arrivingBus.routeTraffic) > 0 ? ' green' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 2 ? ' yellow' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 3 ? ' orange' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 4 ? ' red' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) >= 5 ? ' brown' : ''}
                             `
