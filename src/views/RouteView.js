@@ -7,6 +7,7 @@ import bbox from '@turf/bbox';
 import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
 import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker'
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
+import './RouteView.css'
 
 class RouteView extends React.Component {
 
@@ -1363,7 +1364,7 @@ class RouteStationBlock extends React.Component {
                       `route-station-dot${busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
-                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code>{station.laneName}</code> : ''}</span>
+                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code className={`route-station-lane ${station.staCode.split('/')[0]} ${station.laneName[0]}`}>{station.laneName}</code> : ''}</span>
                     {
                       busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 0 &&
                       <span className={`route-station-bus-icon moving ${color.toLowerCase()}`}>
