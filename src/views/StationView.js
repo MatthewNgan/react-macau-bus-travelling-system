@@ -11,9 +11,9 @@ class StationView extends React.Component {
     return (
       <div className={`view${this.props.currentView === 'station' ? ' active' : ''}`} id='station-view'>
         <header className='view-header-top fixed-top row justify-content-md-center'>
-          <h6 className='col-auto'>開發中...</h6>
+          <h6 className='col-auto'>站點查詢</h6>
         </header>
-        STATION_VIEW
+        <div id='station-map'></div>
       </div>
     )
   }
