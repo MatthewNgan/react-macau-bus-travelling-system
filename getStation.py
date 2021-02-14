@@ -10,9 +10,10 @@ def fetchData(stationList, routeName,b=True):
         if sta['staCode'] in stationList:
             l = stationList[sta['staCode']]
             l['routes'].append({'routeName': routeName,'direction': direction})
+            l['laneName'] = sta['laneName'] if 'laneName' in sta else ''
             stationList[sta['staCode']] = l
         else:
-            stationList[sta['staCode']] = {'longitude':'', 'latitude':'', 'name': sta['staName'],'routes': [{'routeName': routeName,'direction': direction}]}
+            stationList[sta['staCode']] = {'longitude':'', 'latitude':'', 'name': sta['staName'], 'laneName': sta['laneName'] if 'laneName' in sta else '','routes': [{'routeName': routeName,'direction': direction}]}
     aDirection = formattedR['direction']
     if aDirection == '0' and b:
         fetchData(stationList,routeName,False)
@@ -54,9 +55,16 @@ if __name__ == '__main__':
                 for route in station['routes']:
                     if route['routeName'] == orgroute['routeName']:
                         sortedStation.append(route)
-            stationList[key] = {'longitude': station['longitude'], 'latitude': station['latitude'],'name': station['name'], 'routes': sortedStation}
-        with open(r"public/stations.json","w",encoding="utf-8") as f:
+            seen = set()
+            new_sortedStation = []
+            for d in sortedStation:
+                t = tuple(sorted(d.items()))
+                if t not in seen:
+                    seen.add(t)
+                    new_sortedStation.append(d)
+            stationList[key] = {'longitude': station['longitude'], 'latitude': station['latitude'],'laneName': station['laneName'] ,'name': station['name'], 'routes': new_sortedStation}
+        with open(r"src/stations.json","w",encoding="utf-8") as f:
             f.write(json.dumps(dict(sorted(stationList.items())), indent=2))
-        with open(r"public/stations.min.json","w",encoding="utf-8") as f:
+        with open(r"src/stations.min.json","w",encoding="utf-8") as f:
             f.write(json.dumps(dict(sorted(stationList.items()))))
         print('Done')

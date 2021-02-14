@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
+import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker'
 import 'bootstrap/dist/css/bootstrap.css';
 import './index.css';
 import App from './App';
@@ -8,6 +10,9 @@ import smoothscroll from 'smoothscroll-polyfill';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 smoothscroll.polyfill();
+
+mapboxgl.workerClass = MapboxWorker;
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
 ReactDOM.render(
   <React.StrictMode>

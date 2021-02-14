@@ -5,7 +5,6 @@ import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import bbox from '@turf/bbox';
 import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
-import MapboxWorker from 'mapbox-gl/dist/mapbox-gl-csp-worker'
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 import './RouteView.css'
 
@@ -125,7 +124,7 @@ class RouteView extends React.Component {
 
   returnHome = () => {
     if (!this.state.noInternet) {
-      clearAllBodyScrollLocks();
+      // clearAllBodyScrollLocks();
       this.route = null;
       this.color = null;
       this.setState({
@@ -697,9 +696,6 @@ class RouteModal extends React.Component {
   }
 
   initMap() {
-    mapboxgl.workerClass = MapboxWorker;
-    mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
-      
     let mapStyle = 'matthewngan/ckjzsnvju0uqx17o6891qzch5';
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       mapStyle = 'matthewngan/ckjzsftuo0uik17o62fm4oahc';
@@ -1191,7 +1187,7 @@ class RouteModal extends React.Component {
                 </div>
                 <div className='route-header h5 col'>
                   <span className='route-destination'>
-                    {AppData.routeMainPoints[this.state.busRoute?.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()][this.state.busDirection] : this.state.routeData[0].staName}&nbsp;
+                    {AppData.routeMainPoints[this.state.busRoute?.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()][this.state.busDirection] : this.state.routeData.routeInfo[0].staName}&nbsp;
                   </span>
                   <span className='route-destination'>
                     {
@@ -1204,7 +1200,7 @@ class RouteModal extends React.Component {
                         <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
                       </svg>
                     }
-                    &nbsp;{AppData.routeMainPoints[this.state.busRoute.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()].slice().reverse()[this.state.busDirection] : this.state.routeData[0].slice().reverse().staName}
+                    &nbsp;{AppData.routeMainPoints[this.state.busRoute.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()].slice().reverse()[this.state.busDirection] : this.state.routeData.routeInfo.slice().reverse()[0].staName}
                   </span>
                 </div>
               </div>
@@ -1289,7 +1285,7 @@ class RouteModalHeader extends React.Component {
         {
           routeData != null ?
           <div className='h5 route-header col'>
-            <span className='route-destination'>{AppData.routeMainPoints?.[route.toUpperCase()][direction] || routeData.routeInfo[0].staName}&nbsp;</span>
+            <span className='route-destination'>{AppData.routeMainPoints?.[route.toUpperCase()]?.[direction] || routeData?.routeInfo?.[0].staName || ''}&nbsp;</span>
             <span className='route-destination'>
               {
                 directionAvailable === '2' ?
@@ -1301,7 +1297,7 @@ class RouteModalHeader extends React.Component {
                   <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
                 </svg>
               }
-              &nbsp;{AppData.routeMainPoints?.[route.toUpperCase()].slice().reverse()[direction] || routeData.routeInfo.slice().reverse()[0].staName}
+              &nbsp;{AppData.routeMainPoints?.[route.toUpperCase()]?.slice().reverse()[direction] || routeData?.routeInfo?.slice().reverse()[0].staName}
             </span>
           </div>
           : <div className='h5 route-header col'>
@@ -1364,7 +1360,7 @@ class RouteStationBlock extends React.Component {
                       `route-station-dot${busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
-                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code className={`route-station-lane ${station.staCode.split('/')[0]} ${station.laneName[0]}`}>{station.laneName}</code> : ''}</span>
+                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code className={`lane ${station.staCode.split('/')[0]} ${station.laneName[0]}`}>{station.laneName}</code> : ''}</span>
                     {
                       busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 0 &&
                       <span className={`route-station-bus-icon moving ${color.toLowerCase()}`}>

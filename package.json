@@ -1,13 +1,15 @@
 {
   "name": "react-macau-bus-travelling-system",
-  "version": "2.0.5",
+  "version": "2.1.0",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.11.9",
     "@testing-library/react": "^11.2.5",
     "@testing-library/user-event": "^12.6.3",
     "@turf/boolean-point-in-polygon": "^6.3.0",
+    "@turf/distance": "^6.3.0",
     "@turf/helpers": "^6.3.0",
+    "@turf/nearest-point": "^6.3.0",
     "@turf/turf": "^6.3.0",
     "body-scroll-lock": "^3.1.5",
     "bootstrap": "^5.0.0-beta2",

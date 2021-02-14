@@ -3,6 +3,7 @@ import React from 'react';
 import RouteView from './views/RouteView'
 import AboutView from './views/AboutView'
 import StationView from './views/StationView'
+import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 
 class App extends React.Component {
 
@@ -68,6 +69,7 @@ class ViewsTab extends React.Component {
       document.querySelector('#root').scroll({top: 2});
       document.querySelector('body').scroll({top: 2});
     }, 50);
+    disableBodyScroll(document.querySelector('#app'));
   }
 
   render() {
@@ -79,6 +81,21 @@ class ViewsTab extends React.Component {
             <path d="M1.713 11.865v-.474H2c.217 0 .363-.137.363-.317 0-.185-.158-.31-.361-.31-.223 0-.367.152-.373.31h-.59c.016-.467.373-.787.986-.787.588-.002.954.291.957.703a.595.595 0 0 1-.492.594v.033a.615.615 0 0 1 .569.631c.003.533-.502.8-1.051.8-.656 0-1-.37-1.008-.794h.582c.008.178.186.306.422.309.254 0 .424-.145.422-.35-.002-.195-.155-.348-.414-.348h-.3zm-.004-4.699h-.604v-.035c0-.408.295-.844.958-.844.583 0 .96.326.96.756 0 .389-.257.617-.476.848l-.537.572v.03h1.054V9H1.143v-.395l.957-.99c.138-.142.293-.304.293-.508 0-.18-.147-.32-.342-.32a.33.33 0 0 0-.342.338v.041zM2.564 5h-.635V2.924h-.031l-.598.42v-.567l.629-.443h.635V5z"/>
           </svg>
           <div>路線</div>
+        </div>
+        <div className={`col-4 tab${this.props.currentView === 'station' ? ' active': ''}`} onClick={() => this.props.changeView('station')}>
+          <div>
+            {
+              this.props.currentView !== 'station' ?
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt" viewBox="0 0 16 16">
+                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
+                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+              </svg>
+              : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt-fill" viewBox="0 0 16 16">
+                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+              </svg>
+            }
+          </div>
+          <div>站點</div>
         </div>
         <div className={`col-4 tab${this.props.currentView === 'about' ? ' active': ''}`} onClick={() => this.props.changeView('about')}>
           <div>
@@ -94,22 +111,6 @@ class ViewsTab extends React.Component {
             }
           </div>
           <div>關於</div>
-        </div>
-        <div className={`col-4 tab${this.props.currentView === 'station' ? ' active': ''}`} onClick={() => this.props.changeView('station')}>
-          <div>
-            {
-              this.props.currentView !== 'station' ?
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt" viewBox="0 0 16 16">
-                <path d="M12.166 8.94c-.524 1.062-1.234 2.12-1.96 3.07A31.493 31.493 0 0 1 8 14.58a31.481 31.481 0 0 1-2.206-2.57c-.726-.95-1.436-2.008-1.96-3.07C3.304 7.867 3 6.862 3 6a5 5 0 0 1 10 0c0 .862-.305 1.867-.834 2.94zM8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10z"/>
-                <path d="M8 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4zm0 1a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-              </svg>
-              : <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-              </svg>
-            }
-          </div>
-          <div>開發中</div>
-          {/* <div>站點</div> */}
         </div>
         {/* <div className="col-3 tab">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-three-dots" viewBox="0 0 16 16">
