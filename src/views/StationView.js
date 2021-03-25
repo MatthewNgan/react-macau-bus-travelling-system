@@ -3,32 +3,39 @@ import ReactDOM from 'react-dom';
 import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
 import * as helpers from '@turf/helpers';
 import jsonData from '../stations.json';
+import AppData from '../AppData'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import buffer from '@turf/buffer'
-import bbox from '@turf/bbox';
-import bboxPolygon from '@turf/bbox-polygon';
 import nearestPoint from '@turf/nearest-point';
 import distance from '@turf/distance';
 import { disableBodyScroll } from 'body-scroll-lock';
+import RouteModal from '../modals/RouteModal';
 import './StationView.css'
 
 class StationView extends React.Component {
 
+  route = null;
+  color = null;
+  direction = null;
   stationMap = null;
   stationData = JSON.parse(JSON.stringify(jsonData));
   stationShownOnMap = {};
   focusedStation = null;
   isMapMoving = null;
   mapCenter = null;
+  fetchController = new AbortController();
 
   constructor(props) {
     super(props);
     this.state = {
+      isModalVisible: false,
       isStationLoaded: false,
       isStationReady: false,
       isZoomTooSmall: true,
       currentList: 'nearest',
-      nearestStationList: {},
+      nearestStationList: [],
+      routesShowing: 5,
+      shouldModalBeShown: false,
     }
   }
 
@@ -42,6 +49,30 @@ class StationView extends React.Component {
         sta.marker.getElement().style.removeProperty('z-index');
       }
     }
+  }
+
+  getStationData(route, direction) {
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${route}&dir=${direction}`,{signal: this.fetchController.signal})
+    .then(response => {
+      if(response.status >= 200 && response.status < 300) {
+          return response.json();
+      } else {
+          throw new Error('Server/Network Error: ' + response.status);
+      }
+    })
+    .then(data => {
+      this.props.handleNetworkError(false);
+      this.setState({
+        busData: data.data
+      }, () => this.isDataReady.busData = true);
+    })
+    .catch(error => {
+      console.log(error);
+      if (error instanceof TypeError) {
+        this.isDataReady.busData = true;
+        this.props.handleNetworkError(true);
+      }
+    });
   }
 
   handleListChange = (list) => {
@@ -76,6 +107,31 @@ class StationView extends React.Component {
       isStationReady: false,
       isZoomTooSmall: true,
       nearestStationList: {},
+      routesShowing: 5,
+    }, () => document.querySelector('#station-view').dispatchEvent(new Event('scroll')));
+  }
+
+  returnHome = () => {
+    this.route = null;
+    this.color = null;
+    this.stationIndex = null;
+    this.setState({
+      shouldModalBeShown: false
+    });
+    document.querySelector('#station-route-modal .route-navbar')?.classList.toggle('stuck', false);
+  }
+
+  requestRoute = (route,color,direction,index=0) => {
+    this.color = color;
+    this.route = route;
+    this.direction = direction;
+    this.stationIndex = index;
+    this.setState({shouldModalBeShown: true})
+  }
+
+  setNumberOfRoutesShowing = (n) => {
+    this.setState({
+      routesShowing: n,
     })
   }
 
@@ -84,7 +140,9 @@ class StationView extends React.Component {
       let staLoc = [parseFloat(station.longitude), parseFloat(station.latitude)]
       if (booleanPointInPolygon(staLoc, polygon)) {
         if (!this.stationShownOnMap[code]) {
-          let element = <div className="station-marker"></div>
+          let element = <div onClick={() => {
+            this.stationMap.flyTo({center: staLoc});
+          }} className={`station-marker${AppData.mainStations.includes(code.split('/')[0]) ? ' main-station' : ''}`}></div>
           let container = document.createElement('div');
           ReactDOM.render(element, container);
           let staMarker = new mapboxgl.Marker({element: container}).setLngLat(staLoc).addTo(this.stationMap);
@@ -138,6 +196,7 @@ class StationView extends React.Component {
         isStationReady: true,
         isStationLoaded: true,
         nearestStationList: stationShownOnMapEntries,
+        routesShowing: (this.state.nearestStationList?.[0]?.[0] === stationShownOnMapEntries?.[0]?.[0]) ? this.state.routesShowing : 5,
       });
       setTimeout(() => {
         document.querySelector('#station-map .center').style.animation = '0.15s bounce linear';
@@ -156,6 +215,8 @@ class StationView extends React.Component {
           details[0].open = true;
           if (document.querySelector('#station-view').scrollTop < document.querySelector('.main-list details:first-child summary').offsetHeight)
           document.querySelector('#station-view').scroll({top: document.querySelector('.main-list details:first-child').offsetHeight - 1, behavior: 'smooth'});
+        } else if (document.querySelector('#station-view .no-station')) {
+          document.querySelector('#station-view').scroll({top: document.querySelector('#station-view .no-station').offsetHeight - 1, behavior: 'smooth'});
         }
       }, 1);
     }, 250);
@@ -171,18 +232,8 @@ class StationView extends React.Component {
       style: mapStyle, // stylesheet location
       center: [113.5622406,22.166422], // starting position [lng, lat]
       zoom: 11.5, // starting zoom
-      minZoom: 11.5,
+      minZoom: 10.5,
       maxZoom: 18.5,
-      maxBounds: [
-        [
-          113.51263046264648,
-          22.099796009091584
-        ],
-        [
-          113.61064910888672,
-          22.229520549100275
-        ]
-      ],
       dragRotate: false,
       touchPitch: false,
     });
@@ -196,7 +247,7 @@ class StationView extends React.Component {
       })
     );
     this.stationMap.on('load', () => {
-      let centerElement = <div className="center"></div>
+      let centerElement = <div className='center'></div>
       let centerContainer = document.createElement('div')
       ReactDOM.render(centerElement, centerContainer);
       this.center = new mapboxgl.Marker({element: centerContainer}).setLngLat(this.stationMap.getCenter().toArray()).addTo(this.stationMap)
@@ -249,9 +300,9 @@ class StationView extends React.Component {
     );
     disableBodyScroll(document.querySelector('#station-view'));
     document.querySelector('#station-view').addEventListener('scroll', () => {
-      document.querySelector('#station-map').style.height = `calc(var(--view-height) - ${document.querySelector('#station-view').scrollTop}px - ${document.querySelector('.station-info-list nav').offsetHeight}px)`
+      document.querySelector('#station-map').style.height = `calc(var(--view-height) - ${document.querySelector('#station-view').scrollTop}px - ${document.querySelector('.station-info-list nav')?.offsetHeight || 0}px)`
       window.dispatchEvent(new Event('resize'));
-    })
+    });
   }
 
   componentDidUpdate(prevProps) {
@@ -272,7 +323,35 @@ class StationView extends React.Component {
           <h6 className='col-auto'>站點查詢</h6>
         </header>
         <div id='station-map'></div>
-        <StationInfoList focusToMarker={this.focusToMarker} handleListChange={this.handleListChange} nearestStationList={this.state.nearestStationList} isStationReady={this.state.isStationReady} isStationLoaded={this.state.isStationLoaded} currentList={this.state.currentList}></StationInfoList>
+        <div id='route-shadow' className={
+          `${this.props.isModalVisible ? 'route-shadow-shown' : ''}`
+        } onClick={() => this.returnHome()}></div>
+        <RouteModal
+          id='station-route-modal'
+          route={this.route}
+          color={this.color}
+          direction={this.direction}
+          index={this.index}
+          mapSwitch={false}
+          isMapEnabled={false}
+          shown={this.state.shouldModalBeShown}
+          returnHome={this.returnHome}
+          calculateTime={this.props.calculateTime}
+          handleNetworkError={this.props.handleNetworkError}></RouteModal>
+        {!this.state.isZoomTooSmall && 
+        <StationInfoList
+          calculateTime={this.props.calculateTime}
+          getStationRTData={this.getStationRTData}
+          setNumberOfRoutesShowing={this.setNumberOfRoutesShowing}
+          routesShowing={this.state.routesShowing}
+          focusToMarker={this.focusToMarker}
+          handleListChange={this.handleListChange}
+          nearestStationList={this.state.nearestStationList}
+          isStationReady={this.state.isStationReady}
+          isStationLoaded={this.state.isStationLoaded}
+          currentList={this.state.currentList}
+          handleNetworkError={this.props.handleNetworkError}
+          requestRoute={this.requestRoute}></StationInfoList>}
         <ZoomTooSmallNotifs isZoomTooSmall={this.state.isZoomTooSmall}></ZoomTooSmallNotifs>
       </div>
     )
@@ -281,51 +360,66 @@ class StationView extends React.Component {
 }
 
 class StationInfoList extends React.Component {
+
   constructor(props) {
     super(props)
-    this.state = {}
+  }
+
+  getStationRTData(code) {
+    return 0;
   }
 
   render() {
     return(
-      <div className={`station-info-list${this.props.isStationReady ? ' shown' : ''}${this.props.isStationLoaded ? ' loaded' : ''}`}>
+      <div className={`station-info-list${this.props.isStationLoaded ? ' loaded' : ''}`}>
         <nav className='row'>
           <span className={`col${this.props.currentList === 'nearest' ? ' active' : ''}`} onClick={() => this.props.handleListChange('nearest')}>附近站站</span>
           <span className={`col${this.props.currentList === 'favorites' ? ' active' : ''}`} onClick={() => this.props.handleListChange('favorites')}>已收藏站點</span>
         </nav>
         {
           this.props.currentList === 'nearest' ?
-          <div className="main-list">
+          <div className='main-list'>
             {
               this.props.nearestStationList?.length > 0 ? this.props.nearestStationList.map(sta => {
-                return <details key={sta[0]}>
-                  <summary className="station-list-summary" onClick={() => this.props.focusToMarker(sta[1].marker)}>
-                    <div className="title">
-                      <div className="title-code">{sta[0]}</div>
-                      <div className="title-name">{sta[1].data.name}<small className="text-muted"> {Math.round(sta[1].distanceToCenter*1000)}m</small></div>
+                return <details key={sta[0]} onToggle={() => this.getStationRTData(sta[0])}>
+                  <summary className='station-list-summary' onClick={() => {this.props.setNumberOfRoutesShowing(5);this.props.focusToMarker(sta[1].marker);}}>
+                    <div className='title'>
+                      <div className='title-code'>{sta[0]}</div>
+                      <div className='title-name'>{sta[1].data.name}<small className='text-muted'> {Math.round(sta[1].distanceToCenter*1000)}m</small></div>
                       {
                         sta[1].data.laneName && 
                         <code className={`lane ${sta[0].split('/')[0]} ${sta[1].data.laneName[0]}`}>{sta[1].data.laneName}</code>
                       }
                     </div>
-                    <div className="routes">
+                    <div className='routes'>
                       {
-                        sta[1].data.routes.map(route => <span key={route.routeName + '-' + route.direction}>{route.routeName} </span>)
+                        sta[1].data.routes.slice(0,5).map(route => route.routeName).join(' ')
+                      }
+                      {
+                        sta[1].data.routes.length > 6 ?
+                        <code className='more-routes'>+{sta[1].data.routes.length-5}</code>
+                        : (sta[1].data.routes.length == 6  && ' ' + sta[1].data.routes[5].routeName)
                       }
                     </div>
                   </summary>
                   <ul>
                     {
-                      sta[1].data.routes.map(route => <li key={route.routeName + '-' + route.direction}>{route.routeName}-{route.direction}</li>)
+                      sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
+                      <li onClick={() => this.props.requestRoute(route.routeName,route.color,route.direction,route.stationIndex)} key={route.routeName + '-' + route.direction + '-' + route.stationIndex}><div className={`route-name bus ${route.color.toLowerCase()}`}>{route.routeName}</div> 往{route.directionF}</li>
+                      )
                     }
                   </ul>
+                  {
+                    sta[1].data.routes.length > this.props.routesShowing &&
+                    <div className='btn other-routes' onClick={() => this.props.setNumberOfRoutesShowing(this.props.routesShowing + 5)}>查看此站另外 {Math.min(sta[1].data.routes.length - this.props.routesShowing, 5)} 條路線...</div>
+                  }
                 </details>
               })
               : <div className='no-station'>附近沒有任何車站</div>
             }
             </div>
           : 
-          <div className="main-list">
+          <div className='main-list'>
             <details>
               <summary>favorite_station</summary>
             </details>
@@ -356,7 +450,7 @@ class ZoomTooSmallNotifs extends React.Component {
   render() {
     return (
       <div className={`notifs text-center${this.props.isZoomTooSmall ? ' shown' : ''}`}>
-        <div className="notifs-container">
+        <div className='notifs-container'>
           <p>放大地圖以查看巴士站</p>
         </div>
       </div>

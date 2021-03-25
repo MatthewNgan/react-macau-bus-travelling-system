@@ -43,24 +43,7 @@
   display: flex;
   justify-content: space-between;
   padding-right: 1.5rem;
-}
-.route-bus {
-  font-size: 0.8rem;
-  padding-bottom: 0.8rem !important;
-  margin: 10px 0;
-  min-height: 50px;
-  min-width: 50px;
-  text-align: center;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-  color: #000 !important;
-}
-.route-bus.blue {
-  background-image: url("../images/icons/blue-bus.png");
-}
-.route-bus.orange {
-  background-image: url("../images/icons/orange-bus.png");
+  margin: 0.125rem 0;
 }
 .route-bus-marker {
   width: 20px;
@@ -98,6 +81,7 @@
 }
 .route-bus-info ul {
   list-style: none;
+  margin-bottom: 0;
 }
 .route-bus-info-container {
   overflow: auto;
@@ -117,10 +101,10 @@
   z-index: 2000;
   box-shadow: 0 2px 2px rgba(0, 0, 0, 0.2)
 }
-.route-bus-title .route-bus {
+.route-bus-title .bus {
   padding: 15px 12px !important;
 }
-.route-bus-title .route-bus .h5 span, .route-bus-title .route-bus .h6 span{
+.route-bus-title .bus .h5 span, .route-bus-title .bus .h6 span{
   color: #111 !important;
 }
 #route-changedirection-icon {
@@ -137,9 +121,6 @@
 .route-destination svg {
   width: 1rem;
   height: 1rem;
-}
-details[open] summary {
-  background-color: #ddd;
 }
 details[open] summary .route-station-dot {
   transform: scale3d(1.5,1.5,1);
@@ -189,7 +170,7 @@ details[open] .route-station-bus-icon.moving {
 .route-left {
   position: relative;
   z-index: 2500;
-  margin-left: -2rem;
+  margin-left: -2rem !important;
 }
 .route-left img {
   position: absolute;
@@ -202,7 +183,8 @@ details[open] .route-station-bus-icon.moving {
   margin-left: 2rem;
 }
 .route-live {
-  transform: scale(0.9);
+  /* transform: scale(0.9); */
+  font-size: .9rem;
   color: white;
 }
 .route-live {
@@ -390,7 +372,7 @@ details[open] .route-station-bus-icon.moving {
   transition: transform 0.1s linear;
   transform: scale3d(1,1,1);
   position: absolute;
-  top: 10px;
+  top: 15px;
   left: calc(6px + (1rem/1.5/2));
   z-index: 3000;
   width: 18px;
@@ -415,7 +397,7 @@ details[open] .route-station-bus-icon.moving {
   z-index: 3000;
 }
 .route-station-bus-icon.moving {
-  top: calc(10px + (1.5rem + 20px) / 2);
+  top: calc(15px + (1.5rem + 30px) / 2);
   animation: route-breathe 2s linear infinite;
   -webkit-animation: route-breathe 2s linear infinite;
 }
@@ -472,8 +454,8 @@ details[open] .route-station-bus-icon.moving {
 .route-traffic .route-station-line {
   position: absolute;
   width: 3.5px;
-  height: calc(1.5rem + 20px);
-  top: calc((1.5rem + 20px)/2);
+  height: calc(1.5rem + 30px);
+  top: calc((1.5rem + 30px)/2);
   left: calc(13.25px + (1rem/1.5/2));
   z-index: 2100;
   transition: background-color 0.2s linear;
@@ -500,8 +482,11 @@ details[open] .route-station-bus-icon.moving {
 .route-traffic.last .route-station-line {
   transition: background-color 0.25s ease !important;
   background-color: #efefef;
-  height: calc((1.5rem + 20px)/2);
+  height: calc((1.5rem + 30px)/2);
   box-shadow: none !important;
+}
+.route-traffic.last ~ ul {
+  margin-bottom: 1.5rem;
 }
 ul {
   margin-top: 1rem;
@@ -513,9 +498,6 @@ ul {
   /* Route View Style */
   .route-bus-title, .modal, .route-bus-info-container {
     background-color: #222;
-  }
-  details[open] summary {
-    background-color: #333;
   }
   details[open] .last .route-station-line {
     background-color: #333 !important;

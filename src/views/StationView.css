@@ -22,12 +22,18 @@
   top: calc(env(safe-area-inset-top) + 25px + 1.2rem);
 }
 #station-map .station-marker {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   background-color: rgb(255, 70, 70);
-  border-radius: 9px;
+  border-radius: 8px;
   border: 2px solid rgb(255, 255, 255);
   transition: opacity 0.25s linear;
+}
+#station-map .station-marker.main-station {
+  width: 20px;
+  height: 20px;
+  border: 2.75px solid rgb(255, 255, 255);
+  border-radius: 10px;
 }
 #station-map .center {
   opacity: 1;
@@ -40,12 +46,13 @@
 .station-info-list {
   position: absolute;
   width: 100%;
-  min-height: 10%;
+  min-height: 100%;
   left: 0;
   right: 0;
   margin: auto;
   transition: top 0.5s ease;
-  filter: brightness(0.75);
+  filter: brightness(0.9);
+  background-color: rgb(229,229,234);
 }
 .station-info-list.loaded {
   filter: brightness(1);
@@ -60,16 +67,18 @@
   display: flex;
   justify-content: center;
   z-index: 90;
+  box-shadow: 0 4px 4px rgba(0,0,0,0.1)
 }
 .station-info-list nav span {
   display: inline-block;
   padding: .75rem 1rem;
-  filter: brightness(0.5);
-  background-color: rgb(71, 71, 71);
+  filter: brightness(0.75);
+  background-color: rgb(235, 235, 235);
   text-align: center;
 }
 .station-info-list nav span.active {
   filter: brightness(1);
+  box-shadow: inset 0 -3px 0 var(--bs-green);
 }
 .station-info-list .no-station {
   padding: 1rem;
@@ -79,8 +88,8 @@
   top: -1px;
 }
 .station-info-list .main-list details summary {
-  padding-top: 1.1rem;
-  padding-bottom: 1.1rem;
+  padding-top: .75rem;
+  padding-bottom: .75rem;
   padding-left: calc(15px + constant(safe-area-inset-left));
   padding-right: calc(15px + constant(safe-area-inset-right));
   padding-left: calc(15px + env(safe-area-inset-left));
@@ -88,15 +97,21 @@
 }
 .station-info-list .main-list details summary .routes {
   display: block;
+  margin-top: .5rem;
 }
 .station-info-list .main-list details[open] summary .routes {
   display: none;
 }
-.station-info-list .title {
+.station-info-list .main-list details summary .routes .more-routes {
+  background-color: rgb(0, 131, 163);
+  display: inline-block;
+  margin-left: .5rem;
+}
+.station-info-list .main-list .title {
   display: flex;
   align-items: center;
 }
-.station-info-list .title-code {
+.station-info-list .main-list .title-code {
   font-size: 1.25rem;
   color: white;
   background-color: rgb(153, 38, 38);
@@ -104,15 +119,48 @@
   line-height: 1;
   border-radius: 5px;
 }
-.station-info-list .title-name {
+.station-info-list .main-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.station-info-list .main-list ul li {
+  padding: 1rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+.station-info-list .main-list .other-routes {
+  display: flex;
+  justify-content: center;
+  padding: .75rem 0;
+}
+.station-info-list .main-list .title-name {
   font-size: 1.1rem;
   margin-left: 7.5px;
 }
-.station-info-list .lane {
+.station-info-list .main-list .lane {
   margin-left: auto;
+}
+.station-info-list .main-list .bus {
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  margin-right: 5px;
+  padding-bottom: 0.5rem !important;
 }
 .mapboxgl-ctrl-top-left {
   display: flex;
 }
 @media (prefers-color-scheme: dark) {
+  .station-info-list {
+    filter: brightness(0.75);
+    background-color: rgb(18,18,18);
+  }
+  .station-info-list nav span {
+    background-color: rgb(71, 71, 71);
+  }
 }
