@@ -183,8 +183,7 @@ details[open] .route-station-bus-icon.moving {
   margin-left: 2rem;
 }
 .route-live {
-  /* transform: scale(0.9); */
-  font-size: .9rem;
+  transform: scale(0.9);
   color: white;
 }
 .route-live {
