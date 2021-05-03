@@ -28,7 +28,7 @@
 
 本網所有資訊皆由[澳門交通事務局](https://www.dsat.gov.mo/)及其應用程式[巴士報站](http://www.dsat.gov.mo/bus/site/busstopwaiting.aspx?lang=tc)提供，並加以計算得出。
 
-所有原始碼已放置於 `_site` 資料夾
+所有原始碼已放置於 `src` 資料夾
 
 ## 使用方法
 
