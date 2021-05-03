@@ -240,6 +240,9 @@ class StationView extends React.Component {
     this.stationMap.touchZoomRotate.disableRotation();
     this.stationMap.addControl(
       new mapboxgl.GeolocateControl({
+        fitBoundsOptions: {
+          maxZoom: 16.5
+        },
         positionOptions: {
           enableHighAccuracy: true
         },
