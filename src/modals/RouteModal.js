@@ -685,8 +685,10 @@ class RouteModal extends React.Component {
               busElement.style.height = (this.busMap.getZoom() + 1.5).toString() + 'px';
             }
             let focusing = false;
-            for (let bus of this.state.arrivingBuses[this.currentOpenedIndex]) {
-              if (!focusing) focusing = busElement.id.includes(bus.plate)
+            if (this.state.arrivingBuses[this.currentOpenedIndex] != null) {
+              for (let bus of this.state.arrivingBuses[this.currentOpenedIndex]) {
+                if (!focusing) focusing = busElement.id.includes(bus.plate)
+              }
             }
             if (this.focusingStation && !focusing) {
               busElement.style.setProperty('visibility', 'hidden');
