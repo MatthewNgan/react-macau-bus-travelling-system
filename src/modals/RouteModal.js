@@ -726,14 +726,14 @@ class RouteModal extends React.Component {
                 else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 3) color = '#817f00';
                 else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 4) color = '#7e4e00';
                 else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) >= 5) color = '#7e0f00';
-                else color = '#777777'
+                else color = '#3a576b';
               } else {
-                if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 1) color = '#3acc00';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 2) color = '#99c800';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 3) color = '#d1bc00';
+                if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 1) color = '#41a31a';
+                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 2) color = '#8bb600';
+                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 3) color = '#b7a610';
                 else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 4) color = '#d68400';
                 else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) >= 5) color = '#c70000';
-                else color = '#999999'
+                else color = '#67a1b7';
               }
               routeCoordinates.pop();
               let opacity = 1;
@@ -834,7 +834,7 @@ class RouteModal extends React.Component {
               });
               this.currentPopup = this.state.locationData.stationInfoList.slice().length - index - 1;
               document.querySelectorAll('.route-bus-info details')[this.state.locationData.stationInfoList.slice().length - index - 1].open = true;
-              document.querySelector('.route-bus-info-container').scroll({top: (1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 20)*(this.state.locationData.stationInfoList.slice().length - index - 1), behavior: 'smooth'});
+              document.querySelector('.route-bus-info-container').scroll({top: (1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 30)*(this.state.locationData.stationInfoList.slice().length - index - 1), behavior: 'smooth'});
             });
             let stationPopup = new mapboxgl.Popup({closeButton: false, offset: 8}).setText(`${this.state.routeData.routeInfo.slice().reverse()[index].staCode} ${this.state.routeData.routeInfo.slice().reverse()[index].staName}`);
             stationPopup.on('close', () => {
