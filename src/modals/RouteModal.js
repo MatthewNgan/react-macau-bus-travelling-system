@@ -1188,8 +1188,8 @@ class RouteStationBlock extends React?.Component {
                       {station?.staCode} {station?.staName} {station?.laneName ?
                       <code className={`lane ${station?.staCode?.split('/')[0]} ${station?.laneName[0]}`}>{station?.laneName}</code>
                       : ''
-                      } {index === this.props?.closestStationIndex ? <span className='text-muted'>
-                        <small>最近的車站</small>
+                      } {index === this.props?.closestStationIndex ? <span>
+                        <small className='text-muted'>最近的車站</small>
                       </span> : ''}
                     </span>
                     {
