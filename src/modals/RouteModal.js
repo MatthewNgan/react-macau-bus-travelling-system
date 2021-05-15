@@ -645,7 +645,7 @@ class RouteModal extends React?.Component {
     function scrollToNearest(pos){
       let coords = pos.coords;
       let closestStation = 0;
-      let closestDistance = this.props?.calculateDistance(closestStation.longitude, closestStation.latitude, coords.longitude, coords.latitude);
+      let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
       for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
         let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
         if (distance < closestDistance) {
