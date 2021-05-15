@@ -66,6 +66,7 @@ class RouteModal extends React?.Component {
       busRoute: null,
       busData: null,
       busDirection: 0,
+      closestStationIndex: null,
       scrollToIndex: null,
       directionAvailable: '2',
       gettingArrivingBuses: false,
@@ -652,10 +653,12 @@ class RouteModal extends React?.Component {
           closestStation = index; closestDistance = distance;
         }
       }
-      let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-      let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
-      targetParent.parentNode.open = true;
-      container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+      this.setState({closestStationIndex: closestStation}, () => {
+        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+        let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
+        targetParent.parentNode.open = true;
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+      });
     }
     this.waitUntil(() => {
       if (this.state?.scrollToIndex != null) {
@@ -1071,6 +1074,7 @@ class RouteModal extends React?.Component {
                   routeTraffic={this.state?.routeTraffic}
                   toggleIndex={this.toggleIndex}
                   arrivingBuses={this.state?.arrivingBuses}
+                  closestStationIndex={this.state?.closestStationIndex}
                   gettingArrivingBuses={this.state?.gettingArrivingBuses}
                 ></RouteStationBlock>
               </div>
@@ -1180,7 +1184,14 @@ class RouteStationBlock extends React?.Component {
                       `route-station-dot${busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
-                    <span className='route-station-name'>{station?.staCode} {station?.staName} {station?.laneName ? <code className={`lane ${station?.staCode?.split('/')[0]} ${station?.laneName[0]}`}>{station?.laneName}</code> : ''}</span>
+                    <span className='route-station-name'>
+                      {station?.staCode} {station?.staName} {station?.laneName ?
+                      <code className={`lane ${station?.staCode?.split('/')[0]} ${station?.laneName[0]}`}>{station?.laneName}</code>
+                      : ''
+                      } {index === this.props?.closestStationIndex ? <span className='text-muted'>
+                        <small>最近的車站</small>
+                      </span> : ''}
+                    </span>
                     {
                       busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 0 &&
                       <span className={`route-station-bus-icon moving ${color?.toLowerCase()}`}>
