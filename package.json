@@ -1,6 +1,6 @@
 {
   "name": "react-macau-bus-travelling-system",
-  "version": "2.1.7a",
+  "version": "2.1.8",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.12.0",

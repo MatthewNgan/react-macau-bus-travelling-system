@@ -272,6 +272,7 @@ details[open] summary {
 }
 summary {
   list-style: none;
+  list-style-type: none;
   padding: 15px;
   line-height: 1.5;
   opacity: 1;
