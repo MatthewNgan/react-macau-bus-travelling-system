@@ -246,7 +246,6 @@ class StationView extends React.Component {
         positionOptions: {
           enableHighAccuracy: true
         },
-        trackUserLocation: true
       })
     );
     this.stationMap.on('load', () => {
