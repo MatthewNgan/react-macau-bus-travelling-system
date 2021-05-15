@@ -57,6 +57,7 @@ body,#root {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
+  position: relative;
   color: #000 !important;
 }
 .bus.blue {

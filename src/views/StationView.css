@@ -152,6 +152,10 @@
   margin-right: 5px;
   padding-bottom: 0.5rem !important;
 }
+.to-station {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
 .mapboxgl-ctrl-top-left {
   display: flex;
 }

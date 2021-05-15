@@ -1,11 +1,11 @@
 {
   "name": "react-macau-bus-travelling-system",
-  "version": "2.1.5",
+  "version": "2.1.6",
   "private": true,
   "dependencies": {
-    "@testing-library/jest-dom": "^5.11.9",
-    "@testing-library/react": "^11.2.5",
-    "@testing-library/user-event": "^12.6.3",
+    "@testing-library/jest-dom": "^5.12.0",
+    "@testing-library/react": "^11.2.7",
+    "@testing-library/user-event": "^12.8.3",
     "@turf/bbox-polygon": "^6.3.0",
     "@turf/boolean-point-in-polygon": "^6.3.0",
     "@turf/buffer": "^6.3.0",
@@ -14,17 +14,17 @@
     "@turf/nearest-point": "^6.3.0",
     "@turf/turf": "^6.3.0",
     "body-scroll-lock": "^3.1.5",
-    "bootstrap": "^5.0.0-beta2",
-    "dotenv": "^8.2.0",
+    "bootstrap": "^5.0.1",
+    "dotenv": "^8.6.0",
     "mapbox-gl": "^2.2.0",
-    "react": "^17.0.1",
+    "react": "^17.0.2",
     "react-app-rewired": "^2.1.8",
-    "react-dom": "^17.0.1",
+    "react-dom": "^17.0.2",
     "react-scripts": "4.0.2",
     "smoothscroll-polyfill": "^0.4.4",
     "turf": "^3.0.14",
-    "web-vitals": "^1.1.0",
-    "worker-loader": "^3.0.7"
+    "web-vitals": "^1.1.2",
+    "worker-loader": "^3.0.8"
   },
   "scripts": {
     "start": "react-app-rewired start",
@@ -51,6 +51,6 @@
     ]
   },
   "devDependencies": {
-    "pulltorefreshjs": "^0.1.21"
+    "pulltorefreshjs": "^0.1.22"
   }
 }

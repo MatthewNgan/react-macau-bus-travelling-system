@@ -326,21 +326,6 @@ class StationView extends React.Component {
           <h6 className='col-auto'>站點查詢</h6>
         </header>
         <div id='station-map'></div>
-        <div id='route-shadow' className={
-          `${this.props.isModalVisible ? 'route-shadow-shown' : ''}`
-        } onClick={() => this.returnHome()}></div>
-        <RouteModal
-          id='station-route-modal'
-          route={this.route}
-          color={this.color}
-          direction={this.direction}
-          index={this.index}
-          mapSwitch={false}
-          isMapEnabled={false}
-          shown={this.state.shouldModalBeShown}
-          returnHome={this.returnHome}
-          calculateTime={this.props.calculateTime}
-          handleNetworkError={this.props.handleNetworkError}></RouteModal>
         {!this.state.isZoomTooSmall && 
         <StationInfoList
           calculateTime={this.props.calculateTime}
@@ -354,7 +339,7 @@ class StationView extends React.Component {
           isStationLoaded={this.state.isStationLoaded}
           currentList={this.state.currentList}
           handleNetworkError={this.props.handleNetworkError}
-          requestRoute={this.requestRoute}></StationInfoList>}
+          requestRoute={this.props.toggleRouteModal}></StationInfoList>}
         <ZoomTooSmallNotifs isZoomTooSmall={this.state.isZoomTooSmall}></ZoomTooSmallNotifs>
       </div>
     )
@@ -377,10 +362,10 @@ class StationInfoList extends React.Component {
       <div className={`station-info-list${this.props.isStationLoaded ? ' loaded' : ''}`}>
         <nav className='row'>
           <span className={`col${this.props.currentList === 'nearest' ? ' active' : ''}`} onClick={() => this.props.handleListChange('nearest')}>附近站站</span>
-          <span className={`col${this.props.currentList === 'favorites' ? ' active' : ''}`} onClick={() => this.props.handleListChange('favorites')}>已收藏站點</span>
+          {/* <span className={`col${this.props.currentList === 'favorites' ? ' active' : ''}`} onClick={() => this.props.handleListChange('favorites')}>已收藏站點</span> */}
         </nav>
-        {
-          this.props.currentList === 'nearest' ?
+        {/* {
+          this.props.currentList === 'nearest' ? */
           <div className='main-list'>
             {
               this.props.nearestStationList?.length > 0 ? this.props.nearestStationList.map(sta => {
@@ -396,19 +381,33 @@ class StationInfoList extends React.Component {
                     </div>
                     <div className='routes'>
                       {
-                        sta[1].data.routes.slice(0,5).map(route => route.routeName).join(' ')
+                        sta[1].data.routes.slice(0,12).map(route => route.routeName).join(' ')
                       }
                       {
-                        sta[1].data.routes.length > 6 ?
-                        <code className='more-routes'>+{sta[1].data.routes.length-5}</code>
-                        : (sta[1].data.routes.length == 6  && ' ' + sta[1].data.routes[5].routeName)
+                        sta[1].data.routes.length > 13 ?
+                        <code className='more-routes'>+{sta[1].data.routes.length-12}</code>
+                        : (sta[1].data.routes.length == 13  && ' ' + sta[1].data.routes[12].routeName)
                       }
                     </div>
                   </summary>
                   <ul>
                     {
                       sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
-                      <li onClick={() => this.props.requestRoute(route.routeName,route.color,route.direction,route.stationIndex)} key={route.routeName + '-' + route.direction + '-' + route.stationIndex}><div className={`route-name bus ${route.color.toLowerCase()}`}>{route.routeName}</div> 往{route.directionF}</li>
+                      <li key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
+                        <div className={`route-name bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
+                        <span class='to-station'>往{route.directionF}</span>
+                        <button class='btn btn-success' onClick={
+                          () => {
+                            this.props.requestRoute(route.routeName,route.color.toLowerCase(),true,route.direction,route.stationIndex,null,true);
+                          }
+                        } style={
+                          {
+                            marginLeft: 'auto',
+                            color: 'white',
+                            transform: 'scale(0.85)',
+                          }
+                        }>即時資訊</button>
+                      </li>
                       )
                     }
                   </ul>
@@ -421,24 +420,24 @@ class StationInfoList extends React.Component {
               : <div className='no-station'>附近沒有任何車站</div>
             }
             </div>
-          : 
-          <div className='main-list'>
-            <details>
-              <summary>favorite_station</summary>
-            </details>
-            <details>
-              <summary>favorite_station</summary>
-            </details>
-            <details>
-              <summary>favorite_station</summary>
-            </details>
-            <details>
-              <summary>favorite_station</summary>
-            </details>
-            <details>
-              <summary>favorite_station</summary>
-            </details>
-          </div>
+        //   : 
+        //   <div className='main-list'>
+        //     <details>
+        //       <summary>favorite_station</summary>
+        //     </details>
+        //     <details>
+        //       <summary>favorite_station</summary>
+        //     </details>
+        //     <details>
+        //       <summary>favorite_station</summary>
+        //     </details>
+        //     <details>
+        //       <summary>favorite_station</summary>
+        //     </details>
+        //     <details>
+        //       <summary>favorite_station</summary>
+        //     </details>
+        //   </div>
         }
       </div>
     )
