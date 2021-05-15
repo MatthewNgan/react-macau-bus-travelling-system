@@ -380,12 +380,12 @@ class StationInfoList extends React.Component {
                     </div>
                     <div className='routes'>
                       {
-                        sta[1].data.routes.slice(0,12).map(route => route.routeName).join(' ')
+                        sta[1].data.routes.slice(0,10).map(route => route.routeName).join(' ')
                       }
                       {
-                        sta[1].data.routes.length > 13 ?
-                        <code className='more-routes'>+{sta[1].data.routes.length-12}</code>
-                        : (sta[1].data.routes.length == 13  && ' ' + sta[1].data.routes[12].routeName)
+                        sta[1].data.routes.length > 11 ?
+                        <code className='more-routes'>+{sta[1].data.routes.length-10}</code>
+                        : (sta[1].data.routes.length == 11  && ' ' + sta[1].data.routes[10].routeName)
                       }
                     </div>
                   </summary>
@@ -394,8 +394,8 @@ class StationInfoList extends React.Component {
                       sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
                       <li key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
                         <div className={`route-name bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
-                        <span class='to-station'>往{route.directionF}</span>
-                        <button class='btn btn-success' onClick={
+                        <span className='to-station'>往{route.directionF}</span>
+                        <button className='btn btn-success' onClick={
                           () => {
                             this.props.requestRoute(route.routeName,route.color.toLowerCase(),true,route.direction,route.stationIndex,null,true);
                           }
