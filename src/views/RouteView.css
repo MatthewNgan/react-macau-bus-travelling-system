@@ -6,7 +6,7 @@
   --modal-width: calc(95vw - env(safe-area-inset-left) - env(safe-area-inset-right));
   --modal-height: calc(85vh - constant(safe-area-inset-top) - constant(safe-area-inset-bottom));
   --modal-height: calc(85vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-  --map-height: calc(var(--modal-height) * 0.7 - var(--title-offset-top));
+  --map-height: calc(var(--modal-height) * 0.6 - var(--title-offset-top));
   --navbar-height: calc(2.75rem + 10px);
   --title-height: 82px;
   --title-offset-top: 0px;
@@ -16,8 +16,8 @@
   50% { opacity: 0.25; }
 }
 @keyframes route-blink {
-  from, to { background-color:rgb(110, 110, 110); }
-  50% { background-color:rgba(105, 105, 105, 0.375); }
+  from, to { background-color:rgb(58, 87, 107); }
+  50% { background-color:rgba(58, 87, 107, 0.375); }
 }
 @keyframes route-blink-green {
   from, to { background-color:rgba(32, 117, 32, 1); }
@@ -62,7 +62,7 @@
 #route-bus-map ~ .route-main-info-container {
   height: calc(var(--modal-height) * 0.8);
   overflow: hidden;
-  top: calc(var(--modal-height) * 0.7);
+  top: calc(var(--modal-height) * 0.6);
   position: relative;
 }
 #route-bus-map ~ .route-main-info-container .route-navbar {
@@ -219,7 +219,27 @@ details[open] .route-station-bus-icon.moving {
 #route-main-route-view > .container {
   padding-top: 1vw;
 }
-.route-map-important-station {
+.route-map-station {
+  width: 12px;
+  height: 12px;
+  opacity: 0;
+  transition: opacity 0.1s linear;
+  z-index: 2500;
+  border-radius: 9px;
+  border: 2px solid #fff;
+  z-index: 2500;
+  color: white;
+  box-shadow: 0 0 10px #00000011;
+  display: block !important;
+  background-color: #1c7dca;
+}
+.route-map-station.shown {
+  opacity: 1;
+}
+.route-map-station.important {
+  opacity: 1;
+  width: auto;
+  height: auto;
   padding: 4px 6px;
   border-radius: 10px;
   border: 2px solid #fff;
@@ -232,29 +252,19 @@ details[open] .route-station-bus-icon.moving {
   min-height: 16px;
   background-color: #1c7dca;
 }
-.route-map-important-station span {
+.route-map-station.important span {
   display: none;
 }
-.route-map-important-station span.shown {
+.route-map-station.important span.shown {
   display: block;
 }
-.route-map-important-station.origin {
+.route-map-station.important.origin {
   z-index: 3200;
   background-color: rgb(34, 139, 34);
 }
-.route-map-important-station.destination {
+.route-map-station.important.destination {
   z-index: 3200;
   background-color: rgb(187, 67, 23);
-}
-.route-map-station {
-  width: 18px;
-  opacity: 0;
-  transition: opacity 0.1s linear;
-  z-index: 2500;
-}
-.route-map-station.shown {
-  width: 18px;
-  opacity: 1;
 }
 .route-modal {
   width: var(--modal-width);
@@ -339,7 +349,11 @@ details[open] .route-station-bus-icon.moving {
   margin-top: 2px;
 }
 .route-options {
+  position: absolute;
   margin-left: auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
 }
 .route-option-buttons {
   display: flex;
@@ -530,10 +544,10 @@ ul {
   .route-traffic.last .route-station-line {
     background-color: #222 !important;
   }
-  .route-map-important-station.origin {
+  .route-map-station.important.origin {
     background-color: rgb(14, 138, 14);
   }
-  .route-map-important-station.destination {
+  .route-map-station.important.destination {
     background-color: rgb(149, 42, 23);
   }
 }

@@ -33,6 +33,8 @@ class RouteView extends React.Component {
     .then(data => {
       this.props.handleNetworkError(false);
       let messages = [];
+      // for testing purpose...
+      // data = {'data': [{'startTime': '1970-01-01 00:00', 'expireTime': '2099-12-31 23:59', 'message': 'test message'}]}
       for (let item of data.data) {
         let startTime = Date.parse(item.startTime.replace(' ','T') + '+08:00');
         let expireTime = Date.parse(item.expireTime.replace(' ','T') + '+08:00');
@@ -69,26 +71,6 @@ class RouteView extends React.Component {
     });
   }
 
-  returnHome = () => {
-    if (!this.state.noInternet) {
-      // clearAllBodyScrollLocks();
-      this.route = null;
-      this.color = null;
-      this.setState({
-        shouldModalBeShown: false
-      });
-      document.querySelector('#route-modal .route-navbar')?.classList.toggle('stuck', false);
-    }
-  }
-
-  requestRoute(route,color) {
-    this.route = route;
-    this.color = color;
-    this.setState({
-      shouldModalBeShown: true,
-    });
-  }
-
   componentDidMount() {
     this.fetchRoutes();
     this.fetchDyMessage();
@@ -119,10 +101,18 @@ class RouteView extends React.Component {
     return (
       <div className={`view${this.props.currentView === 'route' ? ' active' : ''}`} id='route-view'>
         <header className='view-header-top fixed-top row justify-content-md-center'>
-          <h6 className='col-auto'>路線查詢</h6>
+          <h6 className='col header-title' style={
+            {
+              textAlign: 'center',
+            }
+          }>路線查詢</h6>
           <div className='route-options'>
             {this.state.messages.length > 0 && 
-              <button className='route-info btn' id='toggleInfoBox' aria-label='Messages Button'>
+              <button className='route-info btn' id='toggleInfoBox' aria-label='Messages Button' onClick={
+                () => {
+                  document.querySelector('#route-info-box').classList.toggle('shown');
+                }
+              }>
                 <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-info-circle-fill' viewBox='0 0 16 16'>
                   <path fillRule='evenodd' d='M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412l-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM8 5.5a1 1 0 1 0 0-2 1 1 0 0 0 0 2z'/>
                 </svg>
@@ -130,7 +120,7 @@ class RouteView extends React.Component {
             }
           </div>
         </header>
-        <div id='route-info-box' className='route-info-box modal'>
+        <div id='route-info-box' className='route-info-box modal route-modal'>
           <div className='route-header'>
             <h5>溫馨提示</h5>
           </div>
@@ -140,16 +130,40 @@ class RouteView extends React.Component {
             </ul>
           </div>
         </div>
-        <div id='route-shadow' className={
-          `${this.props.isModalVisible ? 'route-shadow-shown' : ''}`
-        } onClick={() => this.returnHome()}></div>
         <div id='route-main-route-view' className='view-main'>
           <div className='container'>
             {
               this.state.busList.length > 0
               ?
               <div className='row'>
-                {this.state.busList.map(route => <button key={route.routeName} aria-label={`Route ${route.routeName}`} className={`bus col-md-1 col-2 btn ${route.color.toLowerCase()}`} onClick={() => this.requestRoute(route.routeName, route.color)}>{route.routeName}</button>)}
+                {this.state.busList.map(route => 
+                  <button key={route.routeName} aria-label={`Route ${route.routeName}`} className={`bus col-md-1 col-2 btn ${route.color.toLowerCase()}`}
+                  onClick={
+                      () => this.props.toggleRouteModal(route.routeName,route.color.toLowerCase(),true,0,null,null,true)
+                  }>
+                    {
+                      parseInt(route.routeChange) === 1 &&
+                      <div style={{
+                        padding: 1,
+                        backgroundColor: 'white',
+                        position: 'absolute',
+                        top: '-1px',
+                        left: '5px',
+                        borderRadius: 5,
+                        boxShadow: '2px 2px 5px 0 rgba(0, 0, 0, 0.1)'
+                      }}>
+                        <svg style={{
+                            color: 'orangered'
+                          }
+                        } xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-triangle-fill" viewBox="0 0 16 16">
+                          <path style={{
+                            color: 'orangered'
+                          }} d="m9.97 4.88.953 3.811C10.159 8.878 9.14 9 8 9c-1.14 0-2.158-.122-2.923-.309L6.03 4.88C6.635 4.957 7.3 5 8 5s1.365-.043 1.97-.12zm-.245-.978L8.97.88C8.718-.13 7.282-.13 7.03.88L6.275 3.9C6.8 3.965 7.382 4 8 4c.618 0 1.2-.036 1.725-.098zm4.396 8.613a.5.5 0 0 1 .037.96l-6 2a.5.5 0 0 1-.316 0l-6-2a.5.5 0 0 1 .037-.96l2.391-.598.565-2.257c.862.212 1.964.339 3.165.339s2.303-.127 3.165-.339l.565 2.257 2.391.598z"/>
+                        </svg>
+                      </div>
+                    }
+                    {route.routeName}
+                  </button>)}
               </div>
               :
               <div className='route-loading'>
@@ -158,7 +172,6 @@ class RouteView extends React.Component {
             }
           </div>
         </div>
-        <RouteModal mapSwitch={true} id='route-modal' route={this.route} color={this.color} shown={this.state.shouldModalBeShown} returnHome={this.returnHome} calculateTime={this.props.calculateTime} handleNetworkError={this.props.handleNetworkError}></RouteModal>
       </div>
     );
   }

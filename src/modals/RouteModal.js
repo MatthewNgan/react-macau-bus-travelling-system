@@ -6,7 +6,7 @@ import bbox from '@turf/bbox';
 import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 
-class RouteModal extends React.Component {
+class RouteModal extends React?.Component {
   intervals = [];
   fetchController = new AbortController();
   isDataReady = {
@@ -66,6 +66,7 @@ class RouteModal extends React.Component {
       busRoute: null,
       busData: null,
       busDirection: 0,
+      scrollToIndex: null,
       directionAvailable: '2',
       gettingArrivingBuses: false,
       isMapEnabled: false,
@@ -76,11 +77,11 @@ class RouteModal extends React.Component {
     }
   }
 
-  busIconSrc = () => { return require(`../images/icons/${this.state.busColor?.toLowerCase()}-bus-icon.png`).default }
-  lastBusIconSrc = () => { return require(`../images/icons/${this.state.busColor?.toLowerCase()}-bus-icon-last.png`).default }
+  busIconSrc = () => { return require(`../images/icons/${this.state?.busColor?.toLowerCase()}-bus-icon.png`)?.default }
+  lastBusIconSrc = () => { return require(`../images/icons/${this.state?.busColor?.toLowerCase()}-bus-icon-last.png`)?.default }
 
   changeDirection() {
-    this.fetchController.abort();
+    this.fetchController?.abort();
     this.fetchController = new AbortController();
     const changeDirectionIcon = document.querySelector('#route-changedirection-icon');
     if (changeDirectionIcon) changeDirectionIcon.disabled = true;
@@ -89,8 +90,8 @@ class RouteModal extends React.Component {
       if (changeDirectionIcon) changeDirectionIcon.disabled = false;
     }, 5000);
     const details = document.querySelectorAll('details');
-    details.forEach(detail => {
-      detail.removeAttribute('open');
+    details?.forEach(detail => {
+      detail?.removeAttribute('open');
     });
     this.bridgeRoute = {};
     this.isDataReady = {
@@ -101,7 +102,7 @@ class RouteModal extends React.Component {
       routeTraffic: false,
     }
     this.setState({
-      busDirection: (this.state.busDirection === 0) ? 1 : 0,
+      busDirection: (this.state?.busDirection === 0) ? 1 : 0,
       routeTraffic: null,
       routeData: null,
       busData: null,
@@ -112,25 +113,25 @@ class RouteModal extends React.Component {
     });
     if (this.busLayerGroup != []) {
       for (let marker of this.busLayerGroup) {
-        marker.remove();
+        marker?.remove();
       }
     }
     this.busLayerGroup = []
     if (this.stationLayerGroup != []) {
       for (let marker of this.stationLayerGroup) {
-        marker.remove();
+        marker?.remove();
       }
     }
     this.stationLayerGroup = []
-    if (this.state.isMapEnabled && this.busMap && this.busMap.getLayer('route')) {
-      this.busMap.removeLayer('route');
-      this.busMap.removeSource('route');
+    if (this.state?.isMapEnabled && this.busMap && this.busMap?.getLayer('route')) {
+      this.busMap?.removeLayer('route');
+      this.busMap?.removeSource('route');
     }
     this.setupStationMarkersOnMap();
     this.setupBusMarkersOnMap();
     this.setupRoutesOnMap();
-    if (this.busMap && this.state.isMapEnabled && document.querySelector('.route-bus-info-container')) {
-      document.querySelector('.route-bus-info-container').setAttribute('style','');
+    if (this.busMap && this.state?.isMapEnabled && document.querySelector('.route-bus-info-container')) {
+      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
     }
 
   }
@@ -141,16 +142,16 @@ class RouteModal extends React.Component {
     }, () => {
       localStorage.isRouteMapEnabled = false;
       if (this.busMap) {
-        this.busMap.remove();
+        this.busMap?.remove();
       }
       this.busMap = null;
       this.isMapLoaded = false;
       this.busLayerGroup = [];
       this.stationLayerGroup = [];
-      document.querySelector('.route-bus-info-container').setAttribute('style','');
-      let thisTop = document.querySelector('.route-navbar').offsetTop;
-      let titleHeight = document.querySelector('.route-bus-title').offsetHeight;
-      document.querySelector('.route-navbar').classList.toggle('stuck', thisTop > titleHeight);
+      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
+      let thisTop = document.querySelector('.route-navbar')?.offsetTop;
+      let titleHeight = document.querySelector('.route-bus-title')?.offsetHeight;
+      document.querySelector('.route-navbar')?.classList?.toggle('stuck', thisTop > titleHeight);
     });
   }
 
@@ -163,10 +164,10 @@ class RouteModal extends React.Component {
       this.setupBusMarkersOnMap();
       this.setupStationMarkersOnMap();
       this.setupRoutesOnMap();
-      document.querySelector('.route-bus-info-container').setAttribute('style','');
-      document.querySelector('.route-modal').scroll({top: 0});
-      document.querySelector('.route-modal').style.setProperty('--title-offset-top',`${document.querySelector('.route-bus-title').offsetTop}px`);
-      this.busMap.resize();
+      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
+      document.querySelector('.route-modal')?.scroll({top: 0});
+      document.querySelector('.route-modal')?.style?.setProperty('--title-offset-top',`${document.querySelector('.route-bus-title')?.offsetTop}px`);
+      this.busMap?.resize();
     });
     localStorage.isRouteMapEnabled = true;
   }
@@ -174,90 +175,90 @@ class RouteModal extends React.Component {
   fetchBusData() {
     this.isDataReady.busData = false;
     this.isDataReady.locationData = false;
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${this.state.busRoute}&dir=${this.state.busDirection}`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
+    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}`,{signal: this.fetchController?.signal})
+    ?.then(response => {
+      if(response?.status >= 200 && response?.status < 300) {
+          return response?.json();
       } else {
-          throw new Error('Server/Network Error: ' + response.status);
+          throw new Error('Server/Network Error: ' + response?.status);
       }
     })
-    .then(data => {
-      this.props.handleNetworkError(false);
+    ?.then(data => {
+      this.props?.handleNetworkError(false);
       this.setState({
-        busData: data.data
+        busData: data?.data
       }, () => this.isDataReady.busData = true);
     })
-    .catch(error => {
-      console.log(error);
+    ?.catch(error => {
+      console?.log(error);
       if (error instanceof TypeError) {
         this.isDataReady.busData = true;
         this.props.handleNetworkError(true);
       }
     });
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${this.state.busRoute}&dir=${this.state.busDirection}&lang=zh-tw`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
+    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}&lang=zh-tw`,{signal: this.fetchController?.signal})
+    ?.then(response => {
+      if(response?.status >= 200 && response?.status < 300) {
+          return response?.json();
       } else {
-          throw new Error('Server/Network Error: ' + response.status);
+          throw new Error('Server/Network Error: ' + response?.status);
       }
     })
-    .then(data => {
-      this.props.handleNetworkError(false);
+    ?.then(data => {
+      this.props?.handleNetworkError(false);
       this.setState({
-        locationData: data.data,
+        locationData: data?.data,
       }, () => this.isDataReady.locationData = true);
     })
-    .catch(error => {
-      console.log(error);
+    ?.catch(error => {
+      console?.log(error);
       if (error instanceof TypeError) {
         this.isDataReady.locationData = true;
-        this.props.handleNetworkError(true);
+        this.props?.handleNetworkError(true);
       }
     });
   }
 
   fetchRouteData() {
     this.isDataReady.routeData = false;
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteData.html?routeName=${this.state.busRoute}&dir=${this.state.busDirection}&lang=zh-tw`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
+    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteData.html?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}&lang=zh-tw`,{signal: this.fetchController?.signal})
+    ?.then(response => {
+      if(response?.status >= 200 && response?.status < 300) {
+          return response?.json();
       } else {
-          throw new Error('Server/Network Error: ' + response.status);
+          throw new Error('Server/Network Error: ' + response?.status);
       }
     })
-    .then(data => {
-      this.props.handleNetworkError(false);
-      for (let i = 0; i < data.data.routeInfo.length-2; i++) {
-        if (data.data.routeInfo.slice()[i].staCode[0] != data.data.routeInfo.slice()[i+1].staCode[0] && data.data.routeInfo.slice()[i].staCode[0] != 'C' && data.data.routeInfo.slice()[i+1].staCode[0] != 'C') {
-          this.bridgeRoute[i] = [data.data.routeInfo.slice()[i].staCode[0],data.data.routeInfo.slice()[i+1].staCode[0]];
+    ?.then(data => {
+      this.props?.handleNetworkError(false);
+      for (let i = 0; i < data?.data?.routeInfo?.length-2; i++) {
+        if (data?.data?.routeInfo?.slice()[i]?.staCode[0] != data?.data?.routeInfo?.slice()[i+1]?.staCode[0] && data?.data?.routeInfo?.slice()[i]?.staCode[0] != 'C' && data?.data?.routeInfo?.slice()[i+1]?.staCode[0] != 'C') {
+          this.bridgeRoute[i] = [data?.data?.routeInfo?.slice()[i]?.staCode[0],data?.data?.routeInfo?.slice()[i+1]?.staCode[0]];
         }
       }
       this.setState({
-        routeData: data.data,
-        directionAvailable: data.data.direction,
-        isRouteChanged: (data.data.routeInfo.filter(sta => sta.suspendState === '1').length != 0)
+        routeData: data?.data,
+        directionAvailable: data?.data?.direction,
+        isRouteChanged: (data?.data?.routeInfo?.filter(sta => sta?.suspendState === '1')?.length != 0)
       }, () => this.isDataReady.routeData = true);
       this.waitUntil(() => {
         const details = document.querySelectorAll('details');
-        details.forEach((targetDetail) => {
-          targetDetail.addEventListener('click', () => {
-            details.forEach((detail) => {
+        details?.forEach((targetDetail) => {
+          targetDetail?.addEventListener('click', () => {
+            details?.forEach((detail) => {
               if (detail !== targetDetail) {
-                detail.removeAttribute('open');
+                detail?.removeAttribute('open');
               }
             });
           });
         });
       });
     })
-    .catch(error => {
-      console.log(error);
+    ?.catch(error => {
+      console?.log(error);
       if (error instanceof TypeError) {
         this.isDataReady.routeData = true;
-        this.props.handleNetworkError(true);
+        this.props?.handleNetworkError(true);
       }
     });
   }
@@ -265,48 +266,48 @@ class RouteModal extends React.Component {
   fetchTrafficData() {
     this.isDataReady.trafficData = false;
     this.isDataReady.bridgeData = false;
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37011/its/Bridge/getTime.html?lang=zh_tw`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
+    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37011/its/Bridge/getTime.html?lang=zh_tw`,{signal: this.fetchController?.signal})
+    ?.then(response => {
+      if(response?.status >= 200 && response?.status < 300) {
+          return response?.json();
       } else {
-          throw new Error('Server/Network Error: ' + response.status);
+          throw new Error('Server/Network Error: ' + response?.status);
       }
     })
-    .then(data => {
-      this.props.handleNetworkError(false);
-      this.setState({bridgeData: data.data.timeArray}, () => this.isDataReady.bridgeData = true);
+    ?.then(data => {
+      this.props?.handleNetworkError(false);
+      this.setState({bridgeData: data?.data?.timeArray}, () => this.isDataReady.bridgeData = true);
     })
-    .catch(error => {
-      console.log(error);
+    ?.catch(error => {
+      console?.log(error);
       if (error instanceof TypeError) {
         this.isDataReady.bridgeData = true;
-        this.props.handleNetworkError(true);
+        this.props?.handleNetworkError(true);
       }
     });
     
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-this.state.busRoute.length) + this.state.busRoute}&direction=${this.state.busDirection}&indexType=00&device=web`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
+    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-this.state?.busRoute?.length) + this.state?.busRoute}&direction=${this.state?.busDirection}&indexType=00&device=web`,{signal: this.fetchController?.signal})
+    ?.then(response => {
+      if(response?.status >= 200 && response?.status < 300) {
+          return response?.json();
       } else {
-          throw new Error('Server/Network Error: ' + response.status);
+          throw new Error('Server/Network Error: ' + response?.status);
       }
     })
-    .then(data => {
-      this.props.handleNetworkError(false);
-      let tempData = data.data;
+    ?.then(data => {
+      this.props?.handleNetworkError(false);
+      let tempData = data?.data;
       this.waitUntil(() => {
-        let jamRouteIndex = this.state.busData.routeInfo.findIndex((sta) => sta.staCode.includes('M84'));
+        let jamRouteIndex = this.state?.busData?.routeInfo?.findIndex((sta) => sta?.staCode?.includes('M84'));
         if (jamRouteIndex > -1) {
           jamRouteIndex -= 1;
-          tempData[jamRouteIndex].routeTraffic = Math.max(2,Math.pow(parseInt(tempData[jamRouteIndex].routeTraffic),2));
+          tempData[jamRouteIndex].routeTraffic = Math?.max(2,Math?.pow(parseInt(tempData[jamRouteIndex]?.routeTraffic),2));
         }
         if (this.busRoute === '32') {
-          let cloneRouteIndex = this.state.busData.routeInfo.findIndex((sta) => sta.staCode.includes('M254/1'));
+          let cloneRouteIndex = this.state?.busData?.routeInfo?.findIndex((sta) => sta?.staCode?.includes('M254/1'));
           if (cloneRouteIndex > -1) {
             cloneRouteIndex -= 1;
-            tempData[cloneRouteIndex].realTraffic = parseInt(tempData[cloneRouteIndex].routeTraffic) / 8
+            tempData[cloneRouteIndex].realTraffic = parseInt(tempData[cloneRouteIndex]?.routeTraffic) / 8
           }
         }
         for (let bridgeRoute in this.bridgeRoute) {
@@ -317,12 +318,12 @@ class RouteModal extends React.Component {
             direction = 1;
           }
           let onbridge;
-          for (let point of tempData.slice()[parseInt(bridgeRoute)].routeCoordinates.split(';')) {
+          for (let point of tempData?.slice()[parseInt(bridgeRoute)]?.routeCoordinates?.split(';')) {
             if (point != '') {
-              let loc = point.split(',');
+              let loc = point?.split(',');
               for (let id in this.bridgeCoords) {
-                let poly = helpers.polygon(this.bridgeCoords[id][0]);
-                let pt = helpers.point([parseFloat(loc[0]),parseFloat(loc[1])]);
+                let poly = helpers?.polygon(this.bridgeCoords[id][0]);
+                let pt = helpers?.point([parseFloat(loc[0]),parseFloat(loc[1])]);
                 if (booleanPointInPolygon(pt,poly)) {
                   onbridge = id;
                   break;
@@ -333,57 +334,57 @@ class RouteModal extends React.Component {
               }
             }
           }
-          let timeToCrossBridgeInSec = parseInt(this.state.bridgeData.slice()[direction].times.filter(bridge => bridge.id === onbridge)[0].time);
+          let timeToCrossBridgeInSec = parseInt(this.state?.bridgeData?.slice()[direction]?.times?.filter(bridge => bridge?.id === onbridge)[0]?.time);
           if (timeToCrossBridgeInSec > -1) {
-            let speed = (this.bridgeCoords[onbridge].slice()[1] / timeToCrossBridgeInSec * 3.6) > 52 ? 52 : this.bridgeCoords[onbridge].slice()[1] / timeToCrossBridgeInSec * 3.6;
+            let speed = (this.bridgeCoords[onbridge]?.slice()[1] / timeToCrossBridgeInSec * 3.6) > 52 ? 52 : this.bridgeCoords[onbridge]?.slice()[1] / timeToCrossBridgeInSec * 3.6;
             let traffic = 1 / (speed / 3.6 * 60 / 750);
-            tempData[parseInt(bridgeRoute)].routeTraffic = traffic.toString();
+            tempData[parseInt(bridgeRoute)].routeTraffic = traffic?.toString();
           }
         }
         this.setState({routeTraffic: tempData}, () => this.isDataReady.routeTraffic = true);
       },false);
     })
-    .catch(error => {
-      console.log(error);
+    ?.catch(error => {
+      console?.log(error);
       if (error instanceof TypeError) {
         this.isDataReady.routeTraffic = true;
-        this.props.handleNetworkError(true);
+        this.props?.handleNetworkError(true);
       }
     });
   }
   
   focusStation(index=this.currentOpenedIndex, from='n/a') {
     setTimeout(() => {
-      if (this.state.isMapEnabled && this.busMap && this.focusingStation) {
-        let stationLoc = [this.state.locationData.stationInfoList.slice()[index].longitude,this.state.locationData.stationInfoList.slice()[index].latitude];
-        if (this.state.arrivingBuses[index] && this.state.arrivingBuses[index][0] && this.state.arrivingBuses[index][0].currentStation >= 0) {
-          // console.log(from, 'focusing station');
-          let closestBusLoc = this.state.arrivingBuses[index][0].location;
-          let closestStationIndex = this.state.arrivingBuses[index][0].currentStation - 1;
+      if (this.state?.isMapEnabled && this.busMap && this.focusingStation) {
+        let stationLoc = [this.state?.locationData?.stationInfoList?.slice()[index]?.longitude,this.state?.locationData?.stationInfoList?.slice()[index]?.latitude];
+        if (this.state?.arrivingBuses[index] && this.state?.arrivingBuses[index][0] && this.state?.arrivingBuses[index][0]?.currentStation >= 0) {
+          // console?.log(from, 'focusing station');
+          let closestBusLoc = this.state?.arrivingBuses[index][0]?.location;
+          let closestStationIndex = this.state?.arrivingBuses[index][0]?.currentStation - 1;
           let routeCoords = [closestBusLoc];
-          for (let p of this.state.routeTraffic.slice(closestStationIndex, index)) {
-            for (let line of p.routeCoordinates.split(';')) {
-              if (line.includes(',')) {
-                routeCoords.push([parseFloat(line.split(',')[0]),parseFloat(line.split(',')[1])]);
+          for (let p of this.state?.routeTraffic?.slice(closestStationIndex, index)) {
+            for (let line of p?.routeCoordinates?.split(';')) {
+              if (line?.includes(',')) {
+                routeCoords?.push([parseFloat(line?.split(',')[0]),parseFloat(line?.split(',')[1])]);
               }
             }
           }
-          routeCoords.push(stationLoc);
-          let abbox = bbox(helpers.lineString(routeCoords));
-          this.busMap.fitBounds(abbox, {padding: 25, maxZoom: 15.5});
-          let routeSource = this.busMap.getSource('route');
+          routeCoords?.push(stationLoc);
+          let abbox = bbox(helpers?.lineString(routeCoords));
+          this.busMap?.fitBounds(abbox, {padding: 25, maxZoom: 15.5});
+          let routeSource = this.busMap?.getSource('route');
           if (routeSource) {
-            routeSource = this.busMap.getSource('route')._data;
-            for (let [i,features] of routeSource.features.slice().entries()) {
+            routeSource = this.busMap?.getSource('route')?._data;
+            for (let [i,features] of routeSource?.features?.slice()?.entries()) {
               if (i >= index || i < closestStationIndex) {
                 features.properties.opacity = 0.25;
               } else {
                 features.properties.opacity = 1;
               }
             }
-            this.busMap.getSource('route').setData(routeSource);
+            this.busMap?.getSource('route')?.setData(routeSource);
           }
-          for (let i = 0; i < this.stationLayerGroup.length; i++) {
+          for (let i = 0; i < this.stationLayerGroup?.length; i++) {
             if (i > index || i < closestStationIndex) {
               this.stationLayerGroup.slice().reverse()[i].getElement().style.opacity = 0;
             } else if (i === index || i === closestStationIndex) {
@@ -394,39 +395,41 @@ class RouteModal extends React.Component {
             }
           }
           let busPlateWithSameDistance = [];
-          for (let arrivingBus of  this.state.arrivingBuses[index].slice()){
-            if (arrivingBus.stopsRemaining === this.state.arrivingBuses[index][0].stopsRemaining) {
-              busPlateWithSameDistance.push(arrivingBus.plate);
+          for (let arrivingBus of  this.state?.arrivingBuses[index]?.slice()){
+            if (arrivingBus?.stopsRemaining === this.state?.arrivingBuses[index][0]?.stopsRemaining) {
+              busPlateWithSameDistance?.push(arrivingBus?.plate);
             }
           }
-          let busElementGoingToShow = [...document.querySelectorAll('.route-bus-marker')].filter(bus => {
-            return busPlateWithSameDistance.includes(bus.id.replace('bus-',''));
+          let busElementGoingToShow = [...document.querySelectorAll('.route-bus-marker')]?.filter(bus => {
+            return busPlateWithSameDistance?.includes(bus?.id?.replace('bus-',''));
           });
           for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            if (!busElementGoingToShow.includes(busElement)) {
-              busElement.style.setProperty('visibility', 'hidden');
+            if (!busElementGoingToShow?.includes(busElement)) {
+              busElement?.style?.setProperty('visibility', 'hidden');
             } else {
-              busElement.style.removeProperty('visibility');
+              busElement?.style?.removeProperty('visibility');
             }
           }
         } else {
-          this.busMap.flyTo({
-            center: stationLoc,
-            zoom: 15.5,
-          });
-          let routeSource = this.busMap.getSource('route');
+          if (stationLoc[0] != null && stationLoc[1] != null) {
+            this.busMap?.flyTo({
+              center: stationLoc,
+              zoom: 15.5,
+            });
+          }
+          let routeSource = this.busMap?.getSource('route');
           if (routeSource) {
-            routeSource = this.busMap.getSource('route')._data;
-            for (let features of routeSource.features.slice()) {
+            routeSource = this.busMap?.getSource('route')?._data;
+            for (let features of routeSource?.features?.slice()) {
               features.properties.opacity = 1;
             }
-            this.busMap.getSource('route').setData(routeSource);
+            this.busMap?.getSource('route')?.setData(routeSource);
           }
-          for (let i = 0; i < this.stationLayerGroup.length; i++) {
-            this.stationLayerGroup.slice().reverse()[i].getElement().style.removeProperty('opacity');
+          for (let i = 0; i < this.stationLayerGroup?.length; i++) {
+            this.stationLayerGroup?.slice()?.reverse()[i]?.getElement()?.style?.removeProperty('opacity');
           }
           for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            busElement.style.removeProperty('visibility');
+            busElement?.style?.removeProperty('visibility');
           }
         }
       }
@@ -437,34 +440,34 @@ class RouteModal extends React.Component {
     if (index != null) {
       this.setState({gettingArrivingBuses: true});
       this.waitUntil(() => {
-        let busInfoLocations = this.state.locationData.busInfoList;
-        if (busInfoLocations && this.state.routeTraffic) {
-          let stationBefore = this.state.busData.routeInfo.slice(0, index).reverse();
+        let busInfoLocations = this.state?.locationData?.busInfoList;
+        if (busInfoLocations && this.state?.routeTraffic) {
+          let stationBefore = this.state?.busData?.routeInfo?.slice(0, index)?.reverse();
           let count = 0;
           let tempArr = [];
           for (let i = 0; i < index; i++) {
-            for (let comingBus of stationBefore[i].busInfo) {
+            for (let comingBus of stationBefore[i]?.busInfo) {
               if (count < 3) {
-                let routeTraffic = this.state.routeTraffic[index-i-1].routeTraffic;
-                tempArr.push({
-                  'plate': `${comingBus.busPlate.substring(0,2)}-${comingBus.busPlate.substring(2,4)}-${comingBus.busPlate.substring(4,6)}`,
-                  // 'plate': comingBus.busPlate,
-                  'speed': comingBus.speed,
+                let routeTraffic = this.state?.routeTraffic[index-i-1]?.routeTraffic;
+                tempArr?.push({
+                  'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
+                  // 'plate': comingBus?.busPlate,
+                  'speed': comingBus?.speed,
                   'stopsRemaining': i + 1,
                   'durationGet': true,
-                  'duration': this.props.calculateTime(this.state.routeTraffic,index-i,index,[busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].longitude,busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].latitude],comingBus),
+                  'duration': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
                   'routeTraffic': routeTraffic,
-                  'location': [busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].longitude,busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0].latitude],
+                  'location': [busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],
                   'currentStation': index - i,
                 });
                 count++;
               }
             }
           }
-          tempArr.sort((x,y) => (x.duration > y.duration) ? 1 : ((x.duration < y.duration) ? -1 : 0));
+          tempArr?.sort((x,y) => (x?.duration > y?.duration) ? 1 : ((x?.duration < y?.duration) ? -1 : 0));
           this.setState(prevState => ({
             arrivingBuses: {
-              ...prevState.arrivingBuses,
+              ...prevState?.arrivingBuses,
               [index]: tempArr,
             }
           }));
@@ -477,7 +480,7 @@ class RouteModal extends React.Component {
 
   initMap() {
     let mapStyle = 'matthewngan/ckjzsnvju0uqx17o6891qzch5';
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
       mapStyle = 'matthewngan/ckjzsftuo0uik17o62fm4oahc';
     }
     this.busMap = new mapboxgl.Map({
@@ -491,39 +494,39 @@ class RouteModal extends React.Component {
       dragRotate: false,
       touchPitch: false,
     });
-    this.busMap.touchZoomRotate.disableRotation();
-    this.busMap.on('zoomend', () => {
-      if (this.busMap.getZoom() > 13.5) {
-        for (let mapStation of document.querySelectorAll('.route-map-station')) {
-          mapStation.classList.toggle('shown',true);
+    this.busMap?.touchZoomRotate?.disableRotation();
+    this.busMap?.on('zoomend', () => {
+      if (this.busMap?.getZoom() > 13.5) {
+        for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+          mapStation?.classList?.toggle('shown',true);
         }
       } else {
-        for (let mapStation of document.querySelectorAll('.route-map-station')) {
-          mapStation.classList.toggle('shown',false);
+        for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+          mapStation?.classList?.toggle('shown',false);
         }
       }
-      if (this.busMap.getZoom() > 14) {
+      if (this.busMap?.getZoom() > 14) {
         for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-          mapImportantStationText.classList.toggle('shown',true);
+          mapImportantStationText?.classList?.toggle('shown',true);
         }
         for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-          busMarker.style.width = (this.busMap.getZoom() + 3).toString() + 'px';
-          busMarker.style.height = (this.busMap.getZoom() + 3).toString() + 'px';
+          busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+          busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
         }
-        if (this.busMap.getLayer('route')) this.busMap.setPaintProperty('route','line-width',4);
+        if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
       } else {
         for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-          mapImportantStationText.classList.toggle('shown',false);
+          mapImportantStationText?.classList?.toggle('shown',false);
         }
         for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
           busMarker.style.width = '14px';
           busMarker.style.height = '14px';
         }
-        if (this.busMap.getLayer('route')) this.busMap.setPaintProperty('route','line-width',2);
+        if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
       }
     });
-    this.busMap.on('load', () => this.isMapLoaded = true);
-    this.busMap.on('styledata', () => {
+    this.busMap?.on('load', () => this.isMapLoaded = true);
+    this.busMap?.on('styledata', () => {
       this.isMapLoaded = true;
       this.setupRoutesOnMap();
     });
@@ -538,7 +541,7 @@ class RouteModal extends React.Component {
 
   resetData() {
     this.removeInterval();
-    this.fetchController.abort();
+    this.fetchController?.abort();
     this.fetchController = new AbortController();
     this.bridgeRoute = {};
     this.currentWarning = 0;
@@ -563,66 +566,66 @@ class RouteModal extends React.Component {
       routeTraffic: null,
       shown: false,
     });
-    if (this.state.isMapEnabled && this.busMap != null) this.resetMap();
+    if (this.state?.isMapEnabled && this.busMap != null) this.resetMap();
     for (let func of this.eventListenersFunc) {
-      document.querySelector(func[1]).removeEventListener(func[0], func[2]);
+      document.querySelector(func[1])?.removeEventListener(func[0], func[2]);
     }
   }
 
   resetMap() {
-    this.busMap.setCenter([113.5622406,22.166422]);
-    this.busMap.setZoom(11);
-    document.querySelector('#route-bus-map').setAttribute('style','');
-    document.querySelector('.mapboxgl-canvas').setAttribute('style','');
-    this.busMap.resize();
+    this.busMap?.setCenter([113.5622406,22.166422]);
+    this.busMap?.setZoom(11);
+    document.querySelector('#route-bus-map')?.setAttribute('style','');
+    document.querySelector('.mapboxgl-canvas')?.setAttribute('style','');
+    this.busMap?.resize();
     if (this.stationLayerGroup != []) {
       for (let marker of this.stationLayerGroup) {
-        marker.remove();
+        marker?.remove();
       }
     }
     this.stationLayerGroup = [];
     if (this.busLayerGroup != []) {
       for (let marker of this.busLayerGroup) {
-        marker.remove();
+        marker?.remove();
       }
     }
     this.busLayerGroup = [];
-    if (this.busMap.getLayer('route')) {
-      this.busMap.removeLayer('route');
-      this.busMap.removeSource('route');
+    if (this.busMap?.getLayer('route')) {
+      this.busMap?.removeLayer('route');
+      this.busMap?.removeSource('route');
     }
     this.isMapRefreshed = false;
   }
 
   requestRoute() {
-    if (this.state.isMapEnabled && !this.busMap) {
+    if (this.state?.isMapEnabled && !this.busMap) {
       this.initMap();
     }
-    disableBodyScroll(document.querySelector('#' + this.props.id));
+    disableBodyScroll(document.querySelector('#' + this.props?.id));
     let scrollEventFunc = () => {
-      if (!this.busMap && !this.state.isMapEnabled && document.querySelector('#' + this.props.id + ' .route-bus-title')) {
-        let thisTop = document.querySelector('#' + this.props.id + ' .route-navbar').offsetTop;
+      if (!this.busMap && !this.state?.isMapEnabled && document.querySelector('#' + this.props?.id + ' .route-bus-title')) {
+        let thisTop = document.querySelector('#' + this.props?.id + ' .route-navbar')?.offsetTop;
         let titleHeight;
-        if (this.state.isMapEnabled) titleHeight = document.querySelector('#' + this.props.id + ' .route-bus-title').offsetHeight + document.querySelector('#' + this.props.id + ' #route-bus-map').offsetHeight;
-        else titleHeight = document.querySelector('#' + this.props.id + ' .route-bus-title').offsetHeight
-        document.querySelector('#' + this.props.id + ' .route-navbar').classList.toggle('stuck', thisTop > titleHeight);
+        if (this.state?.isMapEnabled) titleHeight = document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetHeight + document.querySelector('#' + this.props?.id + ' #route-bus-map')?.offsetHeight;
+        else titleHeight = document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetHeight
+        document.querySelector('#' + this.props?.id + ' .route-navbar')?.classList?.toggle('stuck', thisTop > titleHeight);
       } else {
-        document.querySelector('#' + this.props.id + ' .route-navbar')?.classList.toggle('stuck', false);
+        document.querySelector('#' + this.props?.id + ' .route-navbar')?.classList?.toggle('stuck', false);
       }
-      if (this.busMap && this.state.isMapEnabled && document.querySelector('.route-bus-title')) {
-        document.querySelector('#' + this.props.id).style.setProperty('--title-offset-top',`${document.querySelector('#' + this.props.id + ' .route-bus-title').offsetTop}px`);
-        this.busMap.resize();
+      if (this.busMap && this.state?.isMapEnabled && document.querySelector('.route-bus-title')) {
+        document.querySelector('#' + this.props?.id)?.style?.setProperty('--title-offset-top',`${document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetTop}px`);
+        this.busMap?.resize();
       }
       if (this.isScrolling) clearTimeout(this.isScrolling);
       this.isScrolling = setTimeout(() => {
-        if (this.busMap && this.state.isMapEnabled) {
+        if (this.busMap && this.state?.isMapEnabled) {
           this.focusStation(this.currentOpenedIndex, 'scroll');
         }
       }, 66);
     }
-    this.eventListenersFunc.push(['scroll','#' + this.props.id,scrollEventFunc]);
-    document.querySelector('#' + this.props.id).addEventListener('scroll',scrollEventFunc);
-    document.querySelector('#' + this.props.id).scrollTop = 0;
+    this.eventListenersFunc?.push(['scroll','#' + this.props?.id,scrollEventFunc]);
+    document.querySelector('#' + this.props?.id)?.addEventListener('scroll',scrollEventFunc);
+    document.querySelector('#' + this.props?.id).scrollTop = 0;
 
     this.fetchRouteData();
     this.fetchBusData();
@@ -639,65 +642,75 @@ class RouteModal extends React.Component {
       this.setupRoutesOnMap();
     },30000);
     this.intervals = [dataInterval, trafficInterval];
+
+    this.waitUntil(() => {
+      if (this.state?.scrollToIndex != null) {
+        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+        let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
+        targetParent.parentNode.open = true;
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+      }
+    })
   }
 
   scrollToWarning() {
-    let container = (this.busMap && this.state.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-    let suspendedParent = document.querySelectorAll('.route-suspended')[this.currentWarning].parentNode;
-    container.scroll({top: (this.busMap && this.state.isMapEnabled) ? suspendedParent.offsetTop - document.querySelector('.route-navbar').offsetHeight : suspendedParent.offsetTop + document.querySelector('.route-bus-title').offsetHeight, behavior: 'smooth'});
-    let suspendedStations = this.state.routeData.routeInfo.filter(station => station.suspendState === '1');
-    if (this.currentWarning === suspendedStations.length-1) this.currentWarning = 0;
-    else if (suspendedStations.length !== 0) this.currentWarning++;
+    let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+    let suspendedParent = document.querySelectorAll('.route-suspended')[this.currentWarning]?.parentNode;
+    container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? suspendedParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : suspendedParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
+    let suspendedStations = this.state?.routeData?.routeInfo?.filter(station => station?.suspendState === '1');
+    if (this.currentWarning === suspendedStations?.length-1) this.currentWarning = 0;
+    else if (suspendedStations?.length !== 0) this.currentWarning++;
   }
   
   setupBusMarkersOnMap() {
-    if (this.state.isMapEnabled && !this.settingUpBusLayer) {
+    if (this.state?.isMapEnabled && !this.settingUpBusLayer) {
       this.settingUpBusLayer = true;
       this.waitUntil(() => {
-        if (this.state.locationData) {
+        if (this.state?.locationData) {
           if (this.busLayerGroup != []) {
             for (let marker of this.busLayerGroup) {
-              marker.remove();
+              marker?.remove();
             }
           }
           this.busLayerGroup = [];
-          for (let bus of this.state.locationData.busInfoList.slice().filter(bus => bus.speed > -1)) {
+          for (let bus of this.state?.locationData?.busInfoList?.slice()?.filter(bus => bus?.speed > -1)) {
             let busElement = document.createElement('img');
-            if (bus.busPlate === this.state.busData?.lastBusPlate) busElement.src = this.lastBusIconSrc();
+            if (bus?.busPlate === this.state?.busData?.lastBusPlate) busElement.src = this.lastBusIconSrc();
             else busElement.src = this.busIconSrc();
-            busElement.classList.add('route-bus-marker');
-            busElement.id = `bus-${bus.busPlate.substring(0,2)}-${bus.busPlate.substring(2,4)}-${bus.busPlate.substring(4,6)}`;
-            for (let sta of this.state.busData.routeInfo) {
-              for (let lbus of sta.busInfo) {
-                if (lbus.busPlate === bus.busPlate && lbus.status === '0') {
-                  busElement.classList.add('moving',true);
+            busElement?.classList?.add('route-bus-marker');
+            busElement.id = `bus-${bus?.busPlate?.substring(0,2)}-${bus?.busPlate?.substring(2,4)}-${bus?.busPlate?.substring(4,6)}`;
+            for (let sta of this.state?.busData?.routeInfo) {
+              for (let lbus of sta?.busInfo) {
+                if (lbus?.busPlate === bus?.busPlate && lbus?.status === '0') {
+                  busElement?.classList?.toggle('moving',true);
                   break;
                 };
               }
-              if (busElement.classList.contains('moving')) break;
+              if (busElement?.classList?.contains('moving')) break;
             }
-            if (this.busMap.getZoom() <= 14) {
+            if (this.busMap?.getZoom() <= 14) {
               busElement.style.width = '14px';
               busElement.style.height = '14px';
             }
             else {
-              busElement.style.width = (this.busMap.getZoom() + 1.5).toString() + 'px';
-              busElement.style.height = (this.busMap.getZoom() + 1.5).toString() + 'px';
+              busElement.style.width = (this.busMap?.getZoom() + 1.5)?.toString() + 'px';
+              busElement.style.height = (this.busMap?.getZoom() + 1.5)?.toString() + 'px';
             }
             let focusing = false;
-            if (this.state.arrivingBuses[this.currentOpenedIndex] != null) {
-              for (let bus of this.state.arrivingBuses[this.currentOpenedIndex]) {
-                if (!focusing) focusing = busElement.id.includes(bus.plate)
+            if (this.state?.arrivingBuses[this.currentOpenedIndex] != null) {
+              for (let bus of this.state?.arrivingBuses[this.currentOpenedIndex]) {
+                if (!focusing) focusing = (busElement?.id?.includes(bus?.plate)) && (bus?.stopsRemaining === this.state?.arrivingBuses[this.currentOpenedIndex][0].stopsRemaining);
+                if (focusing) break;
               }
             }
             if (this.focusingStation && !focusing) {
-              busElement.style.setProperty('visibility', 'hidden');
+              busElement?.style?.setProperty('visibility', 'hidden');
             } else {
-              busElement.style.removeProperty('visibility');
+              busElement?.style?.removeProperty('visibility');
             }
-            let busPopup = new mapboxgl.Popup({closeButton: false, offset: 12}).setHTML(`<code class='${this.state.busColor.toLowerCase()}'>` + bus.busPlate + '</code>' + (bus.speed === '-1' ? '' : ` ${bus.speed}km/h`));
-            let busMarker = new mapboxgl.Marker(busElement).setLngLat([bus.longitude, bus.latitude]).setPopup(busPopup).addTo(this.busMap);
-            this.busLayerGroup.push(busMarker);
+            let busPopup = new mapboxgl.Popup({closeButton: false, offset: 12})?.setHTML(`<code class='${this.state?.busColor?.toLowerCase()}'>` + bus?.busPlate + '</code>' + (bus?.speed === '-1' ? '' : ` ${bus?.speed}km/h`));
+            let busMarker = new mapboxgl.Marker(busElement)?.setLngLat([bus?.longitude, bus?.latitude])?.setPopup(busPopup)?.addTo(this.busMap);
+            this.busLayerGroup?.push(busMarker);
           }
         }
         this.getArrivingBuses(this.currentOpenedIndex);
@@ -707,9 +720,9 @@ class RouteModal extends React.Component {
   }
   
   setupRoutesOnMap() {
-    if (this.state.isMapEnabled && this.busMap) {
+    if (this.state?.isMapEnabled && this.busMap) {
       this.waitUntil(() => {
-        if (this.state.routeTraffic != null) {
+        if (this.state?.routeTraffic != null) {
           let allCoords = [];
           let source = {
             'type': 'geojson',
@@ -718,39 +731,39 @@ class RouteModal extends React.Component {
               'features': []
             },
           }
-          for (let i = 0; i < this.state.routeTraffic.length-1; i++) {
-            if (typeof(this.state.routeTraffic[i].routeCoordinates) === 'string') {
+          for (let i = 0; i < this.state?.routeTraffic?.length-1; i++) {
+            if (typeof(this.state?.routeTraffic[i]?.routeCoordinates) === 'string') {
               let routeCoordinates = [];
-              for (let routeCoordinate of this.state.routeTraffic[i].routeCoordinates.slice().split(';')) {
-                routeCoordinates.push([parseFloat(routeCoordinate.split(',')[0]),parseFloat(routeCoordinate.split(',')[1])]);
-                allCoords.push([parseFloat(routeCoordinate.split(',')[0]),parseFloat(routeCoordinate.split(',')[1])]);
+              for (let routeCoordinate of this.state?.routeTraffic[i]?.routeCoordinates?.slice()?.split(';')) {
+                routeCoordinates?.push([parseFloat(routeCoordinate?.split(',')[0]),parseFloat(routeCoordinate?.split(',')[1])]);
+                allCoords?.push([parseFloat(routeCoordinate?.split(',')[0]),parseFloat(routeCoordinate?.split(',')[1])]);
               }
               let color;
-              if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-                if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 1) color = '#007400';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 2) color = '#5b7c00';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 3) color = '#817f00';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 4) color = '#7e4e00';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) >= 5) color = '#7e0f00';
+              if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+                if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 1) color = '#007400';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 2) color = '#5b7c00';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 3) color = '#817f00';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 4) color = '#7e4e00';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) >= 5) color = '#7e0f00';
                 else color = '#3a576b';
               } else {
-                if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 1) color = '#41a31a';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 2) color = '#8bb600';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 3) color = '#b7a610';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) === 4) color = '#d68400';
-                else if (Math.ceil(parseFloat(this.state.routeTraffic[i].routeTraffic)) >= 5) color = '#c70000';
+                if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 1) color = '#41a31a';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 2) color = '#8bb600';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 3) color = '#b7a610';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 4) color = '#d68400';
+                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) >= 5) color = '#c70000';
                 else color = '#67a1b7';
               }
-              routeCoordinates.pop();
+              routeCoordinates?.pop();
               let opacity = 1;
               let index = this.currentOpenedIndex;
-              if (index != null && this.focusingStation && this.state.arrivingBuses?.[index]?.[0]) {
-                let closestStationIndex = this.state.arrivingBuses[index][0].currentStation - 1;
+              if (index != null && this.focusingStation && this.state?.arrivingBuses?.[index]?.[0]) {
+                let closestStationIndex = this.state?.arrivingBuses[index][0]?.currentStation - 1;
                 if (i >= index || i < closestStationIndex) {
                   opacity = 0.25;
                 }
               }
-              source.data.features.push({
+              source?.data?.features?.push({
                 'type': 'Feature',
                 'properties': {
                   'color': color,
@@ -763,11 +776,11 @@ class RouteModal extends React.Component {
               });
             }
           }
-          if (this.busMap.getLayer('route') && this.busMap.getSource('route')) {
-            this.busMap.getSource('route').setData(source.data);
+          if (this.busMap?.getLayer('route') && this.busMap?.getSource('route')) {
+            this.busMap?.getSource('route')?.setData(source?.data);
           } else {
-            this.busMap.addSource('route',source);
-            this.busMap.addLayer({
+            this.busMap?.addSource('route',source);
+            this.busMap?.addLayer({
               'id': 'route',
               'type': 'line',
               'source': 'route',
@@ -777,15 +790,15 @@ class RouteModal extends React.Component {
               },
               'paint': {
                 'line-color': ['get','color'],
-                'line-width': this.busMap.getZoom() > 14 ? 4 : 2,
+                'line-width': this.busMap?.getZoom() > 14 ? 4 : 2,
                 'line-opacity': ['get','opacity'],
               }
             });
           }
           if (!this.isMapRefreshed) {
-            let routeLine = helpers.lineString(allCoords);
+            let routeLine = helpers?.lineString(allCoords);
             let abbox = bbox(routeLine);
-            this.busMap.fitBounds(abbox, {padding: 50});
+            this.busMap?.fitBounds(abbox, {padding: 50});
             this.isMapRefreshed = true;
           }
         }
@@ -794,60 +807,55 @@ class RouteModal extends React.Component {
   }
   
   setupStationMarkersOnMap() {
-    if (this.state.isMapEnabled && this.busMap) {
+    if (this.state?.isMapEnabled && this.busMap) {
       this.waitUntil(() => {
-        if (this.state.locationData) {
+        if (this.state?.locationData) {
           if (this.stationLayerGroup != []) {
             for (let marker of this.stationLayerGroup) {
-              marker.remove();
+              marker?.remove();
             }
           }
           this.stationLayerGroup = [];
-          for (let [index,station] of this.state.locationData.stationInfoList.slice().reverse().entries()) {
+          for (let [index,station] of this.state?.locationData?.stationInfoList?.slice()?.reverse()?.entries()) {
             let stationElement,stationTextElement;
-            if (index === this.state.locationData.stationInfoList.length - 1) {
-              stationElement = document.createElement('div');
+            stationElement = document.createElement('div');
+            stationElement?.classList?.add('route-map-station');
+            if (index === this.state?.locationData?.stationInfoList?.length - 1) {
               stationTextElement = document.createElement('span');
-              stationTextElement.innerHTML = this.state.routeData.routeInfo.slice().reverse()[index].staName;
-              stationElement.classList.add('route-map-important-station');
-              stationElement.classList.add('origin');
-              stationElement.appendChild(stationTextElement);
+              stationTextElement.innerHTML = this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName;
+              stationElement?.classList?.add('important');
+              stationElement?.classList?.add('origin');
+              stationElement?.appendChild(stationTextElement);
             } else if (index === 0) {
-              stationElement = document.createElement('div');
               stationTextElement = document.createElement('span');
-              stationTextElement.innerHTML = this.state.routeData.routeInfo.slice().reverse()[index].staName;
-              stationElement.classList.add('route-map-important-station');
-              stationElement.classList.add('destination');
-              stationElement.appendChild(stationTextElement);
-            } else if (AppData.mainStations.includes(this.state.routeData.routeInfo.slice().reverse()[index].staCode.split('/')[0])) {
-              stationElement = document.createElement('div');
-              stationElement.classList.add('route-map-important-station');
+              stationTextElement.innerHTML = this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName;
+              stationElement?.classList?.add('important');
+              stationElement?.classList?.add('destination');
+              stationElement?.appendChild(stationTextElement);
+            } else if (AppData?.mainStations?.includes(this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staCode?.split('/')[0])) {
+              stationElement?.classList?.add('important');
             } else {
-              stationElement = document.createElement('img');
-              if (this.colorScheme === 'light') stationElement.src = require('../images/icons/bus-stop-light.png').default;
-              else stationElement.src = require('../images/icons/bus-stop-dark.png').default;
-              stationElement.classList.add('route-map-station');
-              if (this.busMap.getZoom() <= 13.5) stationElement.classList.toggle('shown',false);
-              else stationElement.classList.toggle('shown',true);
+              if (this.busMap?.getZoom() <= 13.5) stationElement?.classList?.toggle('shown',false);
+              else stationElement?.classList?.toggle('shown',true);
             }
-            stationElement.addEventListener('hover',() => {
+            stationElement?.addEventListener('hover',() => {
               this.busMap.getCanvas().style.cursor = 'pointer';
             });
-            stationElement.addEventListener('click',(e) => {
+            stationElement?.addEventListener('click',(e) => {
               const details = document.querySelectorAll('details');
-              details.forEach((detail) => {
-                if (detail != e) detail.removeAttribute('open');
+              details?.forEach((detail) => {
+                if (detail != e) detail?.removeAttribute('open');
               });
-              this.currentPopup = this.state.locationData.stationInfoList.slice().length - index - 1;
-              document.querySelectorAll('.route-bus-info details')[this.state.locationData.stationInfoList.slice().length - index - 1].open = true;
-              document.querySelector('.route-bus-info-container').scroll({top: (1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 30)*(this.state.locationData.stationInfoList.slice().length - index - 1), behavior: 'smooth'});
+              this.currentPopup = this.state?.locationData?.stationInfoList?.slice()?.length - index - 1;
+              document.querySelectorAll('.route-bus-info details')[this.state?.locationData?.stationInfoList?.slice()?.length - index - 1].open = true;
+              document.querySelector('.route-bus-info-container')?.scroll({top: (1.5 * parseFloat(getComputedStyle(document.documentElement)?.fontSize) + 30)*(this.state?.locationData?.stationInfoList?.slice()?.length - index - 1), behavior: 'smooth'});
             });
-            let stationPopup = new mapboxgl.Popup({closeButton: false, offset: 8}).setText(`${this.state.routeData.routeInfo.slice().reverse()[index].staCode} ${this.state.routeData.routeInfo.slice().reverse()[index].staName}`);
-            stationPopup.on('close', () => {
+            let stationPopup = new mapboxgl.Popup({closeButton: false, offset: 8})?.setText(`${this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staCode} ${this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName}`);
+            stationPopup?.on('close', () => {
               this.unfocusStation();
             });
-            let stationMarker = new mapboxgl.Marker(stationElement).setLngLat([parseFloat(station.longitude), parseFloat(station.latitude)]).setPopup(stationPopup).addTo(this.busMap);
-            this.stationLayerGroup.push(stationMarker);
+            let stationMarker = new mapboxgl.Marker(stationElement)?.setLngLat([parseFloat(station?.longitude), parseFloat(station?.latitude)])?.setPopup(stationPopup)?.addTo(this.busMap);
+            this.stationLayerGroup?.push(stationMarker);
           }
         }
       });
@@ -858,11 +866,11 @@ class RouteModal extends React.Component {
     this.currentOpenedIndex = index;
     this.getArrivingBuses(this.currentOpenedIndex);
     let details = document.querySelectorAll('details');
-    if (this.currentPopup != null && this.stationLayerGroup) this.stationLayerGroup.slice().reverse()[this.currentPopup].getPopup().remove();
+    if (this.currentPopup != null && this.stationLayerGroup) this.stationLayerGroup?.slice()?.reverse()[this.currentPopup]?.getPopup()?.remove();
     if (details?.[index]?.hasAttribute('open')) {
       this.focusingStation = true;
-      if (this.state.isMapEnabled && this.busMap && this.stationLayerGroup) {
-        this.stationLayerGroup.slice().reverse()[index].getPopup().addTo(this.busMap);
+      if (this.state?.isMapEnabled && this.busMap && this.stationLayerGroup != null) {
+        this.stationLayerGroup?.slice()?.reverse()[index]?.getPopup()?.addTo(this.busMap);
         this.currentPopup = index;
       }
     }
@@ -872,20 +880,20 @@ class RouteModal extends React.Component {
     this.currentPopup = null;
     this.focusingStation = false;
     setTimeout(() => {
-      if (this.state.isMapEnabled && this.busMap && !this.focusingStation) {
-        for (let i = 0; i < this.stationLayerGroup.length; i++) {
-          this.stationLayerGroup[i].getElement().style.removeProperty('opacity');
+      if (this.state?.isMapEnabled && this.busMap && !this.focusingStation) {
+        for (let i = 0; i < this.stationLayerGroup?.length; i++) {
+          this.stationLayerGroup[i]?.getElement()?.style?.removeProperty('opacity');
         }
-        var routeSource = this.busMap.getSource('route');
+        var routeSource = this.busMap?.getSource('route');
         if (routeSource) {
-          routeSource = this.busMap.getSource('route')._data;
-          for (let features of routeSource.features.slice()) {
+          routeSource = this.busMap?.getSource('route')?._data;
+          for (let features of routeSource?.features?.slice()) {
             features.properties.opacity = 1;
           }
-          this.busMap.getSource('route').setData(routeSource);
+          this.busMap?.getSource('route')?.setData(routeSource);
         }
         for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-          busElement.style.removeProperty('visibility');
+          busElement?.style?.removeProperty('visibility');
         }
       }
     }, 50);
@@ -893,9 +901,9 @@ class RouteModal extends React.Component {
 
   waitUntil(callback,a=true) {
     setTimeout(() => {
-      let condition = [this.isDataReady.routeData, this.isDataReady.locationData, this.isDataReady.busData, this.isDataReady.bridgeData]
-      if (a) condition.push(this.isDataReady.routeTraffic);
-      if (this.state.isMapEnabled) condition.push(this.isMapLoaded);
+      let condition = [this.isDataReady?.routeData, this.isDataReady?.locationData, this.isDataReady?.busData, this.isDataReady?.bridgeData]
+      if (a) condition?.push(this.isDataReady?.routeTraffic);
+      if (this.state?.isMapEnabled) condition?.push(this.isMapLoaded);
       let b = true;
       for (let item of condition) {
         if (!item) {
@@ -912,37 +920,38 @@ class RouteModal extends React.Component {
   }
 
   componentDidMount() {
-    if (this.props.isMapEnabled != null) {
-      this.setState({isMapEnabled: this.props.isMapEnabled});
+    if (this.props?.isMapEnabled != null) {
+      this.setState({isMapEnabled: this.props?.isMapEnabled});
     }
-    else if (localStorage.isRouteMapEnabled) {
-      this.setState({isMapEnabled: localStorage.isRouteMapEnabled === 'true'});
+    else if (localStorage?.isRouteMapEnabled) {
+      this.setState({isMapEnabled: localStorage?.isRouteMapEnabled === 'true'});
     } else {
       localStorage.isRouteMapEnabled = 'false';
     }
-    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',
+    window?.matchMedia('(prefers-color-scheme: dark)')?.addEventListener('change',
       () => {
-        if (this.state.isMapEnabled && this.isMapLoaded) {
+        if (this.state?.isMapEnabled && this.isMapLoaded) {
           this.isMapLoaded = false;
           let mapStyle = 'mapbox://styles/matthewngan/ckjzsnvju0uqx17o6891qzch5';
-          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+          if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
             mapStyle = 'mapbox://styles/matthewngan/ckjzsftuo0uik17o62fm4oahc';
           }
-          this.busMap.setStyle(mapStyle);
+          this.busMap?.setStyle(mapStyle);
         }
       }
     );
   }
 
   componentDidUpdate(prevProps, prevState) {
-    if (prevProps.shown != this.props.shown) {
+    if (prevProps?.shown != this.props?.shown) {
       this.setState({
-        shown: this.props.shown,
-        busRoute: this.props.route,
-        busColor: this.props.color,
-        busDirection: this.props.direction != null ? this.props.direction : 0,
+        shown: this.props?.shown,
+        busRoute: this.props?.route,
+        busColor: this.props?.color,
+        busDirection: this.props?.direction != null ? this.props?.direction : 0,
+        scrollToIndex: this.props?.index != null ? this.props?.index : null,
       }, () => {
-        if (this.props.shown) {
+        if (this.props?.shown) {
           this.fetchController = new AbortController();
           this.requestRoute();
         } else {
@@ -955,38 +964,38 @@ class RouteModal extends React.Component {
   componentWillUnmount() {
     this.resetData();
     this.removeInterval();
-    this.busMap.remove();
+    this.busMap?.remove();
     this.busMap = null;
   }
 
   render() {
     return (
-      <div className={`modal route-modal ${this.state.shown ? 'shown' : ''}`} id={this.props.id}>
+      <div className={`modal route-modal ${this.state?.shown ? 'shown' : ''}`} id={this.props?.id}>
         {
-          this.state.shown &&
-          <RouteModalHeader color={this.state.busColor} route={this.state.busRoute} direction={this.state.busDirection} routeData={this.state.routeData} directionAvailable={this.state.directionAvailable}></RouteModalHeader>
+          this.state?.shown &&
+          <RouteModalHeader color={this.state?.busColor} route={this.state?.busRoute} direction={this.state?.busDirection} routeData={this.state?.routeData} directionAvailable={this.state?.directionAvailable}></RouteModalHeader>
         }   
-        {this.state.isMapEnabled ? <div id='route-bus-map'></div> : null}
+        {this.state?.isMapEnabled ? <div id='route-bus-map'></div> : null}
         <div className='route-main-info-container'>
           <div className='route-navbar'>
-            <button onClick={() => this.props.returnHome()} className='col-auto btn' aria-label='Return Button'>
-              <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-left' viewBox='0 0 16 16'>
+            <button onClick={() => this.props?.returnHome()} className='col-auto btn' aria-label='Return Button'>
+              <svg xmlns='http://www?.w3?.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-left' viewBox='0 0 16 16'>
                 <path fillRule='evenodd' d='M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z'/>
               </svg>
             </button>
             {
-              (this.state.routeData && !this.state.isMapEnabled && this.state.shown) ?
+              (this.state?.routeData && !this.state?.isMapEnabled && this.state?.shown) ?
               <div className='col row route-navbar-title'>
-                <div className={`col-auto route-navbar-bus ${this.state.busColor?.toLowerCase()}`}>
+                <div className={`col-auto route-navbar-bus ${this.state?.busColor?.toLowerCase()}`}>
                   <span>{this.state?.busRoute}</span>
                 </div>
                 <div className='route-header h5 col'>
                   <span className='route-destination'>
-                    {AppData.routeMainPoints[this.state.busRoute?.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()][this.state.busDirection] : this.state.routeData.routeInfo[0].staName}&nbsp;
+                    {AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()] ? AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()][this.state?.busDirection] : this.state?.routeData?.routeInfo[0]?.staName}&nbsp;
                   </span>
                   <span className='route-destination'>
                     {
-                      this.state.directionAvailable === '2' ?
+                      this.state?.directionAvailable === '2' ?
                       <svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='currentColor' className='bi bi-arrow-repeat' viewBox='0 0 16 16'>
                         <path d='M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z'/>
                         <path fillRule='evenodd' d='M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z'/>
@@ -995,7 +1004,7 @@ class RouteModal extends React.Component {
                         <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
                       </svg>
                     }
-                    &nbsp;{AppData.routeMainPoints[this.state.busRoute.toUpperCase()] ? AppData.routeMainPoints[this.state.busRoute.toUpperCase()].slice().reverse()[this.state.busDirection] : this.state.routeData.routeInfo.slice().reverse()[0].staName}
+                    &nbsp;{AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()] ? AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()]?.slice()?.reverse()[this.state?.busDirection] : this.state?.routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
                   </span>
                 </div>
               </div>
@@ -1003,7 +1012,7 @@ class RouteModal extends React.Component {
             }
             <div className='route-option-buttons'>
               {
-                this.state.directionAvailable === '0' &&
+                this.state?.directionAvailable === '0' &&
                 <button onClick={() => this.changeDirection()} type='button' className='col-auto btn' id='route-changedirection-icon' aria-label='Change Direction Button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-down-up' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z'/>
@@ -1011,7 +1020,7 @@ class RouteModal extends React.Component {
                 </button>
               }
               {
-                this.state.isRouteChanged && 
+                this.state?.isRouteChanged && 
                 <button className='btn' onClick={() => this.scrollToWarning()} aria-label='Scroll to warning button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-exclamation-triangle-fill' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/>
@@ -1019,7 +1028,7 @@ class RouteModal extends React.Component {
                 </button>
               }
               {
-                this.props.mapSwitch && (this.state.isMapEnabled ?
+                this.props?.mapSwitch && (this.state?.isMapEnabled ?
                 <button className='btn' onClick={() => this.disableMap()} aria-label='Disable Map button'>
                   <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map-fill' viewBox='0 0 16 16'>
                     <path fillRule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.402-.08a.498.498 0 0 0-.196 0L5 14.09zm5 .8V1.91l.402.08a.5.5 0 0 0 .196 0L11 1.91v12.98l-.5.1-.5-.1z'/>
@@ -1035,21 +1044,21 @@ class RouteModal extends React.Component {
           </div>
           <div className='row'>
             {
-              (this.state.shown && this.state.routeData) ?
+              (this.state?.shown && this.state?.routeData) ?
               <div className='col route-bus-info-container'>
                 <RouteStationBlock
                   busIconSrc={this.busIconSrc}
                   lastBusIconSrc={this.lastBusIconSrc}
-                  busData={this.state.busData}
-                  color={this.state.busColor}
-                  routeData={this.state.routeData.routeInfo}
-                  routeTraffic={this.state.routeTraffic}
+                  busData={this.state?.busData}
+                  color={this.state?.busColor}
+                  routeData={this.state?.routeData?.routeInfo}
+                  routeTraffic={this.state?.routeTraffic}
                   toggleIndex={this.toggleIndex}
-                  arrivingBuses={this.state.arrivingBuses}
-                  gettingArrivingBuses={this.state.gettingArrivingBuses}
+                  arrivingBuses={this.state?.arrivingBuses}
+                  gettingArrivingBuses={this.state?.gettingArrivingBuses}
                 ></RouteStationBlock>
               </div>
-              : <div className='route-loading route-bus-info-container'>載入中...</div>
+              : <div className='route-loading route-bus-info-container'>載入中?...</div>
             }
           </div>
         </div>
@@ -1058,29 +1067,29 @@ class RouteModal extends React.Component {
   }
 }
 
-class RouteModalHeader extends React.Component {
+class RouteModalHeader extends React?.Component {
 
   constructor(props) {
     super(props);
   }
 
   render() {
-    const route = this.props.route;
-    const routeData = this.props.routeData;
-    const direction = this.props.direction;
-    const directionAvailable = this.props.directionAvailable;
-    const color = this.props.color;
+    const route = this.props?.route;
+    const routeData = this.props?.routeData;
+    const direction = this.props?.direction;
+    const directionAvailable = this.props?.directionAvailable;
+    const color = this.props?.color;
     return (
       <div className='row ml-0 route-bus-title'>
-        <div className={`bus col-auto ${color.toLowerCase()}`}>
-          <div className={route.length > 2 ? 'h6' : 'h5'}>
+        <div className={`bus col-auto ${color?.toLowerCase()}`}>
+          <div className={route?.length > 2 ? 'h6' : 'h5'}>
             <span>{route}</span>
           </div>
         </div>
         {
           routeData != null ?
           <div className='h5 route-header col'>
-            <span className='route-destination'>{AppData.routeMainPoints?.[route.toUpperCase()]?.[direction] || routeData?.routeInfo?.[0].staName || ''}&nbsp;</span>
+            <span className='route-destination'>{AppData?.routeMainPoints?.[route?.toUpperCase()]?.[direction] || routeData?.routeInfo?.[0]?.staName || ''}&nbsp;</span>
             <span className='route-destination'>
               {
                 directionAvailable === '2' ?
@@ -1092,7 +1101,7 @@ class RouteModalHeader extends React.Component {
                   <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
                 </svg>
               }
-              &nbsp;{AppData.routeMainPoints?.[route.toUpperCase()]?.slice().reverse()[direction] || routeData?.routeInfo?.slice().reverse()[0].staName}
+              &nbsp;{AppData?.routeMainPoints?.[route?.toUpperCase()]?.slice()?.reverse()[direction] || routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
             </span>
           </div>
           : <div className='h5 route-header col'>
@@ -1102,19 +1111,19 @@ class RouteModalHeader extends React.Component {
           </div>
         }
         {
-          route.toLowerCase() === 'ap1x' ?
+          route?.toLowerCase() === 'ap1x' ?
           <span className='col-auto text-muted'>機場<br/>快線</span>
-          : (route.toLowerCase().includes('ap') ?
+          : (route?.toLowerCase()?.includes('ap') ?
             <span className='col-auto text-muted'>機場<br/>專線</span>
-            : (route.toLowerCase().includes('s') ? 
+            : (route?.toLowerCase()?.includes('s') ? 
               <span className='col-auto text-muted'>特班車</span>
-              : (route.toLowerCase().includes('h') ? 
+              : (route?.toLowerCase()?.includes('h') ? 
                 <span className='col-auto text-muted'>醫院<br/>專線</span>
-                : (route.toLowerCase().includes('mt') ?
+                : (route?.toLowerCase()?.includes('mt') ?
                   <span className='col-auto text-muted'>澳氹<br/>專線</span>
-                  : (route.toLowerCase().includes('n') ?
+                  : (route?.toLowerCase()?.includes('n') ?
                     <span className='col-auto text-muted'>夜間<br/>巴士</span>
-                    : (route.toLowerCase().includes('x') ?
+                    : (route?.toLowerCase()?.includes('x') ?
                       <span className='col-auto text-muted'>快線</span>
                       : null
                     )
@@ -1129,50 +1138,50 @@ class RouteModalHeader extends React.Component {
   }
 }
 
-class RouteStationBlock extends React.Component {
+class RouteStationBlock extends React?.Component {
   constructor(props) {
     super(props);
   }
 
   render() {
-    const arrivingBuses = this.props.arrivingBuses;
-    const busIconSrc = this.props.busIconSrc();
-    const lastBusIconSrc = this.props.lastBusIconSrc();
-    const busData = this.props.busData;
-    const color = this.props.color;
-    const routeData = this.props.routeData;
-    const routeTraffic = this.props.routeTraffic;
-    const toggleIndex = this.props.toggleIndex;
+    const arrivingBuses = this.props?.arrivingBuses;
+    const busIconSrc = this.props?.busIconSrc();
+    const lastBusIconSrc = this.props?.lastBusIconSrc();
+    const busData = this.props?.busData;
+    const color = this.props?.color;
+    const routeData = this.props?.routeData;
+    const routeTraffic = this.props?.routeTraffic;
+    const toggleIndex = this.props?.toggleIndex;
     return (
       <div className='route-bus-info'>
         {
-          routeData.map((station,index) => {
+          routeData?.map((station,index) => {
             return (
               <details key={index} onToggle={() => toggleIndex(index)}>
                 {
-                  <summary className={`route-traffic${index === routeData.length - 1 ? ' last' : ''}${(parseFloat(routeTraffic?.[index]?.routeTraffic) <= 1 && parseFloat(routeTraffic?.[index]?.routeTraffic) > 0) ? ' green': ''}${Math.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 2 ? ' yellow' : ''}${Math.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 3 ? ' orange' : ''}${Math.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 4 ? ' red' : ''}${Math.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) >= 5 ? ' brown' : ''}`}>
+                  <summary className={`route-traffic${index === routeData?.length - 1 ? ' last' : ''}${(parseFloat(routeTraffic?.[index]?.routeTraffic) <= 1 && parseFloat(routeTraffic?.[index]?.routeTraffic) > 0) ? ' green': ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 2 ? ' yellow' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 3 ? ' orange' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 4 ? ' red' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) >= 5 ? ' brown' : ''}`}>
                     <span className={
-                      `route-station-dot${busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 0 ? ' hidden' : ''}`
+                      `route-station-dot${busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
-                    <span className='route-station-name'>{station.staCode} {station.staName} {station.laneName ? <code className={`lane ${station.staCode.split('/')[0]} ${station.laneName[0]}`}>{station.laneName}</code> : ''}</span>
+                    <span className='route-station-name'>{station?.staCode} {station?.staName} {station?.laneName ? <code className={`lane ${station?.staCode?.split('/')[0]} ${station?.laneName[0]}`}>{station?.laneName}</code> : ''}</span>
                     {
-                      busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 0 &&
-                      <span className={`route-station-bus-icon moving ${color.toLowerCase()}`}>
+                      busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 0 &&
+                      <span className={`route-station-bus-icon moving ${color?.toLowerCase()}`}>
                           {
-                            busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length > 1 ?
-                            <span>{busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0').length}</span>
-                            : (busData?.lastBusPlate === busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '0')[0].busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
+                            busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 1 ?
+                            <span>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length}</span>
+                            : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                           }
                       </span>
                     }
                     {
-                      busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 0 && 
-                      <span className={`route-station-bus-icon ${color.toLowerCase()}`}>
+                      busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 0 && 
+                      <span className={`route-station-bus-icon ${color?.toLowerCase()}`}>
                         {
-                          busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length > 1 ?
-                          <span>{busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length}</span>
-                          : (busData?.lastBusPlate === busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1')[0].busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
+                          busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 1 ?
+                          <span>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length}</span>
+                          : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                         }
                       </span>
                     }
@@ -1184,10 +1193,10 @@ class RouteStationBlock extends React.Component {
                 }
                 <ul className='route-arriving-list'>
                   {
-                    busData?.routeInfo?.[index]?.busInfo.filter(bus => bus.status === '1').map(bus => {
+                    busData?.routeInfo?.[index]?.busInfo?.filter(bus => bus?.status === '1')?.map(bus => {
                       return (
-                        <li key={bus.busPlate}>
-                          <span><code className={color.toLowerCase()}>{bus.busPlate.substring(0,2)}-{bus.busPlate.substring(2,4)}-{bus.busPlate.substring(4,6)}</code></span>
+                        <li key={bus?.busPlate}>
+                          <span><code className={color?.toLowerCase()}>{bus?.busPlate?.substring(0,2)}-{bus?.busPlate?.substring(2,4)}-{bus?.busPlate?.substring(4,6)}</code></span>
                           {
                             index > 0 ?
                             <span className='route-time-remaining'>己進站</span>
@@ -1198,19 +1207,19 @@ class RouteStationBlock extends React.Component {
                     })
                   }
                   {
-                    arrivingBuses?.[index]?.slice().map(arrivingBus => 
-                      <li key={arrivingBus.plate}>
-                        <span><code className={color.toLowerCase()}>{arrivingBus.plate}</code> <small>{arrivingBus.speed}km/h</small> 距離 {arrivingBus.stopsRemaining} 站</span> 
+                    arrivingBuses?.[index]?.slice()?.map(arrivingBus => 
+                      <li key={arrivingBus?.plate}>
+                        <span><code className={color?.toLowerCase()}>{arrivingBus?.plate}</code> <small>{arrivingBus?.speed}km/h</small> 距離 {arrivingBus?.stopsRemaining} 站</span> 
                         <span className={
-                          `route-time-remaining route-live${parseFloat(arrivingBus.routeTraffic) <= 1 && parseFloat(arrivingBus.routeTraffic) > 0 ? ' green' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 2 ? ' yellow' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 3 ? ' orange' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) === 4 ? ' red' : ''}${Math.ceil(parseFloat(arrivingBus.routeTraffic)) >= 5 ? ' brown' : ''}`
+                          `route-time-remaining route-live${parseFloat(arrivingBus?.routeTraffic) <= 1 && parseFloat(arrivingBus?.routeTraffic) > 0 ? ' green' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 2 ? ' yellow' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 3 ? ' orange' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 4 ? ' red' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) >= 5 ? ' brown' : ''}`
                           }>
-                          <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='currentColor' className='bi bi-broadcast' viewBox='0 0 16 16'>
+                          <svg xmlns='http://www?.w3?.org/2000/svg' width='14' height='14' fill='currentColor' className='bi bi-broadcast' viewBox='0 0 16 16'>
                             <path fillRule='evenodd' d='M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 0 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707z'/>
                             <path d='M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'/>
                           </svg>
                           {
-                            arrivingBus.duration > 30 ?
-                            <span> {arrivingBus.duration <= 3600 ? (Math.round((arrivingBus.duration) / 60)) + ' 分鐘' : '多於 ' + Math.floor((arrivingBus.duration) / 3600) + ' 小時'}</span>
+                            arrivingBus?.duration > 30 ?
+                            <span> {arrivingBus?.duration <= 3600 ? (Math?.round((arrivingBus?.duration) / 60)) + ' 分鐘' : '多於 ' + Math?.floor((arrivingBus?.duration) / 3600) + ' 小時'}</span>
                             : <span> 即將進站</span>
                           }
                         </span>
@@ -1218,19 +1227,19 @@ class RouteStationBlock extends React.Component {
                     )
                   }
                   {
-                    busData?.routeInfo?.[index]?.busInfo.filter(bus => bus.status === '0').map(bus => {
+                    busData?.routeInfo?.[index]?.busInfo?.filter(bus => bus?.status === '0')?.map(bus => {
                       return (
-                        <li key={bus.busPlate} className='route-left'>
-                          {bus.busPlate === busData?.lastBusPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />}
-                          <span><code className={color.toLowerCase()}>{bus.busPlate.substring(0,2)}-{bus.busPlate.substring(2,4)}-{bus.busPlate.substring(4,6)}</code></span>
+                        <li key={bus?.busPlate} className='route-left'>
+                          {bus?.busPlate === busData?.lastBusPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />}
+                          <span><code className={color?.toLowerCase()}>{bus?.busPlate?.substring(0,2)}-{bus?.busPlate?.substring(2,4)}-{bus?.busPlate?.substring(4,6)}</code></span>
                           <span className='route-time-remaining'>己離站</span>
                         </li>
                       )
                     })
                   }
                   {
-                    (busData?.routeInfo[index].busInfo.filter((bus) => bus.status === '1').length == 0 && (!arrivingBuses[index] || arrivingBuses[index].length === 0)) &&
-                    (!this.props.gettingArrivingBuses ? <li>尚未發車</li> : <li>計算中...</li>)
+                    (busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length == 0 && (!arrivingBuses[index] || arrivingBuses[index]?.length === 0)) &&
+                    (!this.props?.gettingArrivingBuses ? <li>尚未發車</li> : <li>計算中...</li>)
                   }
                 </ul>
               </details>
