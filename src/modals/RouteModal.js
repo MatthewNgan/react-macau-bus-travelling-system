@@ -642,7 +642,7 @@ class RouteModal extends React?.Component {
       this.setupRoutesOnMap();
     },30000);
     this.intervals = [dataInterval, trafficInterval];
-    function scrollToNearest(pos){
+    let scrollToNearest = (pos) => {
       let coords = pos.coords;
       let closestStation = 0;
       let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
