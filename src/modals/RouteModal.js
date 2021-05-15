@@ -642,7 +642,21 @@ class RouteModal extends React?.Component {
       this.setupRoutesOnMap();
     },30000);
     this.intervals = [dataInterval, trafficInterval];
-
+    let scrollToNearest = (pos) => {
+      let coords = pos.coords;
+      let closestStation = 0;
+      let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
+      for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
+        let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
+        if (distance < closestDistance) {
+          closestStation = index; closestDistance = distance;
+        }
+      }
+      let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+      let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
+      targetParent.parentNode.open = true;
+      container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+    }
     this.waitUntil(() => {
       if (this.state?.scrollToIndex != null) {
         let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
@@ -650,20 +664,7 @@ class RouteModal extends React?.Component {
         targetParent.parentNode.open = true;
         container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
       } else if (navigator?.geolocation) {
-        navigator.geolocation.getCurrentPosition((coords) => {
-          let closestStation = 0;
-          let closestDistance = this.props?.calculateDistance(closestStation.longitude, closestStation.latitude, coords.longitude, coords.latitude);
-          for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
-            let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
-            if (distance < closestStation) {
-              closestStation = index; closestDistance = distance;
-            }
-          }
-          let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-          let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
-          targetParent.parentNode.open = true;
-          container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
-        })
+        navigator.geolocation.getCurrentPosition(scrollToNearest);
       }
     })
   }
