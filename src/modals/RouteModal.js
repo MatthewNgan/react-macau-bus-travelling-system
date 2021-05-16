@@ -597,6 +597,7 @@ class RouteModal extends React?.Component {
   }
 
   requestRoute() {
+    this.setState({closestStationIndex: null});
     if (this.state?.isMapEnabled && !this.busMap) {
       this.initMap();
     }
@@ -663,8 +664,9 @@ class RouteModal extends React?.Component {
       if (this.state?.scrollToIndex != null) {
         let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
         let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
+        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(this.state?.scrollToIndex-3,0)];
         targetParent.parentNode.open = true;
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
       } else if (navigator?.geolocation) {
         navigator.geolocation.getCurrentPosition(scrollToNearest);
       }
