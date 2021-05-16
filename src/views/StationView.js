@@ -407,7 +407,6 @@ class StationInfoList extends React.Component {
               },
             }
           }));
-          console.log(this.state.stationRTData);
         })
       }
     return 0;
@@ -426,7 +425,6 @@ class StationInfoList extends React.Component {
             {
               this.props.nearestStationList?.length > 0 ? this.props.nearestStationList.map(sta => {
                 return <details id={sta[0]} key={sta[0]} onToggle={() => {
-                  console.log('toggled details')
                   if (document.getElementById(sta[0])?.open) {
                     this.getStationRTData(sta[0]);
                     if (this.intervals[sta[0]] != null) {
@@ -468,7 +466,7 @@ class StationInfoList extends React.Component {
                       sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
                       <li className={`bus-block ${route.color.toLowerCase()}`} key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
                         <div style={{fontSize: '2rem'}} className={`route-name big-bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
-                        <div className='to-station'><span>前往</span><span style={{fontWeight: 'bold', fontSize: '1.2em'}}>{route.directionF}</span></div>
+                        <div className='to-station'><span>前往</span><span style={{fontWeight: 'bold', fontSize: '1.2em'}}>{route.directionF.slice(0,10)}{route.directionF.length > 10 ? '...' : ''}</span></div>
                         <button className='btn btn-success' onClick={
                           () => {
                             this.props.requestRoute(route.routeName,route.color.toLowerCase(),true,route.direction,route.stationIndex,null,true);
@@ -480,8 +478,13 @@ class StationInfoList extends React.Component {
                             transform: 'scale(0.9)',
                           }
                         }>{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining != null ?
-                          <span style={{fontWeight: 'bold', color: 'white', fontSize: '1.5rem'}}>{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining} 站</span>
-                          : '即時資訊'}</button>
+                          <span style={{fontWeight: 'bold', color: 'white', fontSize: '1.25rem', fontFamily: 'Montserrat, sans-serif'}}>
+                            <svg style={{color: 'white'}} xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-broadcast" viewBox="0 0 16 16">
+                              <path style={{color: 'white'}} d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
+                            </svg>
+                            &nbsp;{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining} 站
+                          </span>
+                          : '未發車'}</button>
                       </li>
                       )
                     }

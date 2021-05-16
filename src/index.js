@@ -16,7 +16,7 @@ mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
 ReactDOM.render(
   <React.StrictMode>
-    <Suspense fallback={<div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', fontWeight: 'bold'}}>載入中...</div>}>
+    <Suspense fallback={<div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold'}}>載入中...</div>}>
       <App />
     </Suspense>
   </React.StrictMode>,

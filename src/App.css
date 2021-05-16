@@ -288,6 +288,9 @@ details[open] summary {
   margin: 0;
   padding: 0;
 }
+summary::-webkit-details-marker {
+  display: none;
+}
 summary {
   list-style: none;
   list-style-type: none;
@@ -296,9 +299,6 @@ summary {
   opacity: 1;
   transition: background-color 0.1s linear;
 }
-summary::-webkit-details-marker {
-   display: none;
- }
 summary .route-station-line {
   display: inline-block;
 }
