@@ -654,8 +654,9 @@ class RouteModal extends React?.Component {
       this.setState({closestStationIndex: closestStation}, () => {
         let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
         let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
+        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(closestStation-3,0)];
         targetParent.parentNode.open = true;
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
       });
     }
     this.waitUntil(() => {
@@ -663,7 +664,7 @@ class RouteModal extends React?.Component {
         let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
         let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
         targetParent.parentNode.open = true;
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'auto'});
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : targetParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
       } else if (navigator?.geolocation) {
         navigator.geolocation.getCurrentPosition(scrollToNearest);
       }

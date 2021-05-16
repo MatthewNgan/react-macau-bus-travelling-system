@@ -4,6 +4,10 @@
   84% {transform: scale3d(1.15,1.15,1)}
   100% {transform: scale3d(1,1,1)}
 }
+@keyframes fadeinout {
+  0% {opacity: 1}
+  50% {opacity: .75}
+}
 #station-view {
   overflow-y: auto;
   padding-top: calc(var(--view-height) - 1.5rem - 24px);
@@ -167,6 +171,11 @@
 }
 .to-station > * {
   margin: 2px;
+}
+.bus-block button {
+  background-color: #0e6b41de;
+  border: none;
+  animation: fadeinout 4s linear infinite;
 }
 .mapboxgl-ctrl-top-left {
   display: flex;

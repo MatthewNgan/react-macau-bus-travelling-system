@@ -1,5 +1,5 @@
 export default {
-  corsProxy: process.env.REACT_APP_PROXY, appVersion: 'v2.2.6',
+  corsProxy: process.env.REACT_APP_PROXY, appVersion: 'v2.2.7',
   routeMainPoints: {
     '1': ['關閘','媽閣'],
     '1A': ['筷子基街','新口岸/科英布拉街'],
