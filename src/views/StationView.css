@@ -5,8 +5,8 @@
   100% {transform: scale3d(1,1,1)}
 }
 @keyframes fadeinout {
-  0% {opacity: 1}
-  50% {opacity: .75}
+  0% {background-color: #0e6b41de;}
+  50% {background-color: #0e6b418e;}
 }
 #station-view {
   overflow-y: auto;
