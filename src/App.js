@@ -1,10 +1,10 @@
 import './App.css';
-import React from 'react';
-import RouteModal from './modals/RouteModal'
-import RouteView from './views/RouteView'
-import AboutView from './views/AboutView'
-import StationView from './views/StationView'
+import React, { lazy, Suspense } from 'react';
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
+const RouteModal = lazy(() => import('./modals/RouteModal'));
+const RouteView = lazy(() => import('./views/RouteView'));
+const AboutView = lazy(() => import('./views/AboutView'));
+const StationView = lazy(() => import('./views/StationView'));
 
 class App extends React.Component {
 
@@ -126,13 +126,16 @@ class App extends React.Component {
   }
 
   componentDidMount() {
-    this.modalList = document.querySelectorAll('.modal');
-    for (let modal of this.modalList) {
-      const observer = new MutationObserver(() => {
-        this.setState({isModalVisible: document.querySelector('.modal.shown') !== null});
-      });
-      observer.observe(modal,{attributes: true});
-    }
+    const to = new MutationObserver(() => {
+      this.modalList = document.querySelectorAll('.modal');
+      for (let modal of this.modalList) {
+        const observer = new MutationObserver(() => {
+          this.setState({isModalVisible: document.querySelector('.modal.shown') !== null});
+        });
+        observer.observe(modal,{attributes: true, childList: true});
+      }
+    })
+    to.observe(document.querySelector('#app'), {childList: true})
   }
 
   componentDidUpdate(prevProps,prevState) {

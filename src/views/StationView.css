@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;900&display=swap');
 @keyframes bounce {
   0% {transform: scale3d(1,1,1)}
   16% {transform: scale3d(0.9,0.9,1)}
@@ -98,6 +99,8 @@
 .station-info-list .main-list details summary .routes {
   display: block;
   margin-top: .5rem;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
 }
 .station-info-list .main-list details[open] summary .routes {
   display: none;
@@ -112,6 +115,8 @@
   align-items: center;
 }
 .station-info-list .main-list .title-code {
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 400;
   font-size: 1.25rem;
   color: white;
   background-color: rgb(153, 38, 38);
@@ -138,6 +143,7 @@
 .station-info-list .main-list .title-name {
   font-size: 1.1rem;
   margin-left: 7.5px;
+  font-weight: 700;
 }
 .station-info-list .main-list .lane {
   margin-left: auto;
@@ -149,12 +155,16 @@
   align-items: center;
   justify-content: center;
   margin: 0;
-  margin-right: 5px;
+  margin-right: 2.5px;
   padding-bottom: 0.5rem !important;
 }
 .to-station {
-  font-size: 1.25rem;
-  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  font-size: .9rem;
+}
+.to-station > * {
+  margin: 2px;
 }
 .mapboxgl-ctrl-top-left {
   display: flex;

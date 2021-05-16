@@ -200,7 +200,7 @@ class StationView extends React.Component {
       });
       setTimeout(() => {
         document.querySelector('#station-map .center').style.animation = '0.15s bounce linear';
-        const details = document.querySelectorAll('details');
+        const details = document.querySelectorAll('.station-info-list .main-list details');
         details.forEach((targetDetail) => {
           targetDetail.open = false;
           targetDetail.addEventListener('click', () => {
@@ -295,9 +295,11 @@ class StationView extends React.Component {
     this.initMap();
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',
       () => {
-        this.stationMap.remove();
-        this.stationMap = null;
-        this.initMap();
+        let mapStyle = 'mapbox://styles/matthewngan/ckjzsnvju0uqx17o6891qzch5';
+        if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+          mapStyle = 'mapbox://styles/matthewngan/ckjzsftuo0uik17o62fm4oahc';
+        }
+        this.stationMap?.setStyle(mapStyle);
       }
     );
     disableBodyScroll(document.querySelector('#station-view'));
@@ -328,7 +330,6 @@ class StationView extends React.Component {
         {!this.state.isZoomTooSmall && 
         <StationInfoList
           calculateTime={this.props.calculateTime}
-          getStationRTData={this.getStationRTData}
           setNumberOfRoutesShowing={this.setNumberOfRoutesShowing}
           routesShowing={this.state.routesShowing}
           focusToMarker={this.focusToMarker}
@@ -348,11 +349,67 @@ class StationView extends React.Component {
 
 class StationInfoList extends React.Component {
 
+  stationData = JSON.parse(JSON.stringify(jsonData));
+  intervals = [];
+
   constructor(props) {
-    super(props)
+    super(props);
+    this.state = {
+      stationRTData: {}
+    }
   }
 
   getStationRTData(code) {
+    for (let route of this.stationData[code].routes) {
+      // let busInfoLocations = this.state?.locationData?.busInfoList;
+      // if (busInfoLocations && this.state?.routeTraffic) {
+        fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${route.routeName}&dir=${route.direction}`)
+        .then(response => {
+          if(response?.status >= 200 && response?.status < 300) {
+              return response?.json();
+          } else {
+              throw new Error('Server/Network Error: ' + response?.status);
+          }
+        })
+        .then(data => {
+          let index = route?.stationIndex;
+          let busData = data?.data;
+          let stationBefore = busData?.routeInfo?.slice(0, index+1)?.reverse();
+          let count = 0;
+          let tempArr = [];
+          for (let i = 0; i < index+1; i++) {
+            for (let comingBus of stationBefore[i]?.busInfo) {
+              if (count < 1) {
+                if ((i === 0 && comingBus?.status === 0) || i !== 0) {
+                  // let routeTraffic = routeTraffic[index-i-1]?.routeTraffic;
+                  tempArr?.push({
+                    'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
+                    // 'plate': comingBus?.busPlate,
+                    'speed': comingBus?.speed,
+                    'stopsRemaining': i,
+                    // 'durationGet': true,
+                    // 'duration': this.props?.calculateTime(routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
+                    // 'routeTraffic': routeTraffic,
+                    // 'location': [busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],
+                    // 'currentStation': index - i,
+                  });
+                  count++;
+                }
+              }
+            }
+          }
+          this.setState(prevState => ({
+            stationRTData: {
+              ...prevState?.stationRTData,
+              [code]: {
+                ...prevState?.stationRTData[code],
+                [route.routeName]: tempArr
+              },
+            }
+          }));
+          console.log(this.state.stationRTData);
+        })
+      }
     return 0;
   }
 
@@ -368,7 +425,24 @@ class StationInfoList extends React.Component {
           <div className='main-list'>
             {
               this.props.nearestStationList?.length > 0 ? this.props.nearestStationList.map(sta => {
-                return <details key={sta[0]} onToggle={() => this.getStationRTData(sta[0])}>
+                return <details id={sta[0]} key={sta[0]} onToggle={() => {
+                  console.log('toggled details')
+                  if (document.getElementById(sta[0])?.open) {
+                    this.getStationRTData(sta[0]);
+                    if (this.intervals[sta[0]] != null) {
+                      clearInterval(this.intervals[sta[0]]);
+                    }
+                    this.intervals[sta[0]] = setInterval(() => {
+                      if (document.getElementById(sta[0])?.open) this.getStationRTData(sta[0]);
+                      else {
+                        clearInterval(this.intervals?.[sta[0]]);
+                      };
+                      console.log(this.intervals);
+                    }, 10000);
+                  } else {
+                    clearInterval(this.intervals?.[sta[0]]);
+                  }
+                }}>
                   <summary className='station-list-summary' onClick={() => {this.props.setNumberOfRoutesShowing(5);this.props.focusToMarker(sta[1].marker);}}>
                     <div className='title'>
                       <div className='title-code'>{sta[0]}</div>
@@ -392,9 +466,9 @@ class StationInfoList extends React.Component {
                   <ul>
                     {
                       sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
-                      <li key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
-                        <div className={`route-name bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
-                        <span className='to-station'>往{route.directionF}</span>
+                      <li className={`bus-block ${route.color.toLowerCase()}`} key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
+                        <div style={{fontSize: '2rem'}} className={`route-name big-bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
+                        <div className='to-station'><span>前往</span><span style={{fontWeight: 'bold', fontSize: '1.2em'}}>{route.directionF}</span></div>
                         <button className='btn btn-success' onClick={
                           () => {
                             this.props.requestRoute(route.routeName,route.color.toLowerCase(),true,route.direction,route.stationIndex,null,true);
@@ -403,9 +477,11 @@ class StationInfoList extends React.Component {
                           {
                             marginLeft: 'auto',
                             color: 'white',
-                            transform: 'scale(0.85)',
+                            transform: 'scale(0.9)',
                           }
-                        }>即時資訊</button>
+                        }>{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining != null ?
+                          <span style={{fontWeight: 'bold', color: 'white', fontSize: '1.5rem'}}>{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining} 站</span>
+                          : '即時資訊'}</button>
                       </li>
                       )
                     }
