@@ -377,10 +377,10 @@ class StationInfoList extends React.Component {
           let stationBefore = busData?.routeInfo?.slice(0, index+1)?.reverse();
           let count = 0;
           let tempArr = [];
-          for (let i = 0; i < index+1; i++) {
+          for (let i = 0; i < Math.max(Math.min(stationBefore.length, index+1),1); i++) {
             for (let comingBus of stationBefore[i]?.busInfo) {
               if (count < 1) {
-                if ((i === 0 && parseInt(comingBus?.status) === 1) || i !== 0) {
+                if (((i === 0 && parseInt(comingBus?.status) === 1) || i !== 0) || (stationBefore.length < index && i === 0) || (index === 0 && i === 0 && parseInt(comingBus?.status) === 1)) {
                   // let routeTraffic = routeTraffic[index-i-1]?.routeTraffic;
                   tempArr?.push({
                     'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
@@ -391,13 +391,14 @@ class StationInfoList extends React.Component {
                     // 'duration': this.props?.calculateTime(routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
                     // 'routeTraffic': routeTraffic,
                     // 'location': [busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],
-                    // 'currentStation': index - i,
+                    'currentStation': index - i,
                   });
                   count++;
                 }
               }
             }
           }
+          console.log(tempArr)
           this.setState(prevState => ({
             stationRTData: {
               ...prevState?.stationRTData,
@@ -482,7 +483,7 @@ class StationInfoList extends React.Component {
                             <svg style={{color: 'white'}} xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-broadcast" viewBox="0 0 16 16">
                               <path style={{color: 'white'}} d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>
                             </svg>
-                            &nbsp;{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining > 0 ? `${this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining} 站` : '到達'}
+                            &nbsp;{this.state?.stationRTData?.[sta[0]]?.[`${route.routeName}-${route.direction}`]?.[0]?.stopsRemaining > 0 ? `${this.state?.stationRTData?.[sta[0]]?.[`${route.routeName}-${route.direction}`]?.[0]?.stopsRemaining} 站` : (this.state?.stationRTData?.[sta[0]]?.[`${route.routeName}-${route.direction}`]?.[0]?.currentStation === 0 ? '即將發車' : '到達')}
                           </span>
                           : '未發車'}</button>
                       </li>
