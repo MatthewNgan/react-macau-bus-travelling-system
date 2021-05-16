@@ -4,8 +4,6 @@ import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import bbox from '@turf/bbox';
 import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
-import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
-
 class RouteModal extends React?.Component {
   intervals = [];
   fetchController = new AbortController();
@@ -602,7 +600,6 @@ class RouteModal extends React?.Component {
     if (this.state?.isMapEnabled && !this.busMap) {
       this.initMap();
     }
-    disableBodyScroll(document.querySelector('#' + this.props?.id));
     let scrollEventFunc = () => {
       if (!this.busMap && !this.state?.isMapEnabled && document.querySelector('#' + this.props?.id + ' .route-bus-title')) {
         let thisTop = document.querySelector('#' + this.props?.id + ' .route-navbar')?.offsetTop;
@@ -1078,7 +1075,7 @@ class RouteModal extends React?.Component {
                   gettingArrivingBuses={this.state?.gettingArrivingBuses}
                 ></RouteStationBlock>
               </div>
-              : <div className='route-loading route-bus-info-container'>載入中?...</div>
+              : <div className='route-loading route-bus-info-container'>載入中...</div>
             }
           </div>
         </div>
@@ -1266,7 +1263,7 @@ class RouteStationBlock extends React?.Component {
                   }
                   {
                     (busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length == 0 && (!arrivingBuses[index] || arrivingBuses[index]?.length === 0)) &&
-                    (!this.props?.gettingArrivingBuses ? <li>尚未發車</li> : <li>計算中...</li>)
+                    (!this.props?.gettingArrivingBuses ? <li>未發車</li> : <li>計算中...</li>)
                   }
                 </ul>
               </details>

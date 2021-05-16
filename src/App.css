@@ -66,6 +66,25 @@ body,#root {
 .bus.orange {
   background-image: url("./images/icons/orange-bus.png");
 }
+.big-bus {
+  margin-right: 10px;
+  font-weight: 700;
+  font-family: 'Montserrat', sans-serif;
+  padding: .4rem;
+  color: white;
+  border-radius: 5px;
+  line-height: 1;
+  text-align: center;
+  min-width: 3rem;
+  display: table-cell;
+  vertical-align: middle;
+}
+.big-bus.blue {
+  background-color: #276299;
+}
+.big-bus.orange {
+  background-color: #c26c32;
+}
 code {
   color: white;
   padding: 2px 5px;
@@ -208,9 +227,8 @@ code.lane.C690.B {
 details[open] summary {
   background-color: #ddd;
 }
-.mapboxgl-marker, .mapboxgl-control-container > * {
-  -webkit-transform: translateZ(0px);
-  -webkit-transform-style: preserve-3d;
+.mapboxgl-canvas-container {
+  -webkit-transform:translate3d(0,0,0);
 }
 .modal {
   position: fixed;
@@ -277,9 +295,6 @@ summary {
   line-height: 1.5;
   opacity: 1;
   transition: background-color 0.1s linear;
-}
-summary::-webkit-details-marker {
-  display: none;
 }
 summary .route-station-line {
   display: inline-block;
@@ -354,9 +369,6 @@ summary .route-station-line {
   padding: 10px 15px;
   border-radius: 1rem;
   font-size: .9rem;
-}
-.mapboxgl-control-container > * {
-  z-index: 5000;
 }
 /* About View */
 .main-about-view {
