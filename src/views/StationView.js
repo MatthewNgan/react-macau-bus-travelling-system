@@ -380,7 +380,7 @@ class StationInfoList extends React.Component {
           for (let i = 0; i < index+1; i++) {
             for (let comingBus of stationBefore[i]?.busInfo) {
               if (count < 1) {
-                if ((i === 0 && parseInt(comingBus?.status) === 0) || i !== 0) {
+                if ((i === 0 && parseInt(comingBus?.status) === 1) || i !== 0) {
                   // let routeTraffic = routeTraffic[index-i-1]?.routeTraffic;
                   tempArr?.push({
                     'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
