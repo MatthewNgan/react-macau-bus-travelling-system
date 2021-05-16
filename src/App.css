@@ -296,6 +296,9 @@ summary {
   opacity: 1;
   transition: background-color 0.1s linear;
 }
+summary::-webkit-details-marker {
+   display: none;
+ }
 summary .route-station-line {
   display: inline-block;
 }
