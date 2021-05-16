@@ -3,7 +3,7 @@ import AppData from '../AppData'
 import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import bbox from '@turf/bbox';
-import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
+import mapboxgl from 'mapbox-gl/dist/mapbox-gl'; import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 class RouteModal extends React?.Component {
   intervals = [];
   fetchController = new AbortController();
@@ -600,6 +600,7 @@ class RouteModal extends React?.Component {
     if (this.state?.isMapEnabled && !this.busMap) {
       this.initMap();
     }
+    disableBodyScroll(document.querySelector('#' + this.props?.id));
     let scrollEventFunc = () => {
       if (!this.busMap && !this.state?.isMapEnabled && document.querySelector('#' + this.props?.id + ' .route-bus-title')) {
         let thisTop = document.querySelector('#' + this.props?.id + ' .route-navbar')?.offsetTop;
