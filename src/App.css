@@ -76,8 +76,7 @@ body,#root {
   line-height: 1;
   text-align: center;
   min-width: 3rem;
-  display: table-cell;
-  vertical-align: middle;
+  flex-shrink: 0;
 }
 .big-bus.blue {
   background-color: #276299;

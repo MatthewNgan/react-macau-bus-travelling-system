@@ -51,30 +51,6 @@ class StationView extends React.Component {
     }
   }
 
-  getStationData(route, direction) {
-    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${route}&dir=${direction}`,{signal: this.fetchController.signal})
-    .then(response => {
-      if(response.status >= 200 && response.status < 300) {
-          return response.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response.status);
-      }
-    })
-    .then(data => {
-      this.props.handleNetworkError(false);
-      this.setState({
-        busData: data.data
-      }, () => this.isDataReady.busData = true);
-    })
-    .catch(error => {
-      console.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.busData = true;
-        this.props.handleNetworkError(true);
-      }
-    });
-  }
-
   handleListChange = (list) => {
     this.setState({
       currentList: list,
@@ -329,6 +305,7 @@ class StationView extends React.Component {
         <div id='station-map'></div>
         {!this.state.isZoomTooSmall && 
         <StationInfoList
+          currentView={this.props.currentView}
           calculateTime={this.props.calculateTime}
           setNumberOfRoutesShowing={this.setNumberOfRoutesShowing}
           routesShowing={this.state.routesShowing}
@@ -372,6 +349,7 @@ class StationInfoList extends React.Component {
           }
         })
         .then(data => {
+          this.props?.handleNetworkError(false);
           let index = route?.stationIndex;
           let busData = data?.data;
           let stationBefore = busData?.routeInfo?.slice(0, index+1)?.reverse();
@@ -398,19 +376,30 @@ class StationInfoList extends React.Component {
               }
             }
           }
-          console.log(tempArr)
           this.setState(prevState => ({
             stationRTData: {
               ...prevState?.stationRTData,
               [code]: {
                 ...prevState?.stationRTData[code],
-                [route.routeName]: tempArr
+                [`${route.routeName}-${route.direction}`]: tempArr
               },
             }
           }));
         })
+        .catch(error => {
+          console?.log(error);
+          if (error instanceof TypeError) {
+            this.props.handleNetworkError(true);
+          }
+        })
       }
     return 0;
+  }
+
+  componentDidUpdate(prevProps) {
+    if (prevProps.currentView !== 'station' && this.props.currentView === 'station') {
+      document.querySelector('.station-info-list .main-list details[open]').dispatchEvent(new Event('toggle'));
+    }
   }
 
   render() {
@@ -432,11 +421,10 @@ class StationInfoList extends React.Component {
                       clearInterval(this.intervals[sta[0]]);
                     }
                     this.intervals[sta[0]] = setInterval(() => {
-                      if (document.getElementById(sta[0])?.open) this.getStationRTData(sta[0]);
+                      if (document.getElementById(sta[0])?.open && this.props.currentView === 'station') this.getStationRTData(sta[0]);
                       else {
                         clearInterval(this.intervals?.[sta[0]]);
                       };
-                      console.log(this.intervals);
                     }, 10000);
                   } else {
                     clearInterval(this.intervals?.[sta[0]]);
@@ -467,18 +455,18 @@ class StationInfoList extends React.Component {
                       sta[1].data.routes.slice(0,this.props.routesShowing).map(route => 
                       <li className={`bus-block ${route.color.toLowerCase()}`} key={route.routeName + '-' + route.direction + '-' + route.stationIndex}>
                         <div style={{fontSize: '2rem'}} className={`route-name big-bus ${route.color.toLowerCase()}`}>{route.routeName}</div>
-                        <div className='to-station'><span>前往</span><span style={{fontWeight: 'bold', fontSize: '1.2em'}}>{route.directionF.slice(0,10)}{route.directionF.length > 10 ? '...' : ''}</span></div>
+                        <div className='to-station'><span style={{whiteSpace: 'nowrap'}}>前往</span><span style={{fontWeight: 'bold', fontSize: '1.2em', display: '-webkit-inline-box', overflow: 'hidden', textOverflow: 'ellipsis', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical'}}>{route.directionF}</span></div>
                         <button className='btn btn-success' onClick={
                           () => {
                             this.props.requestRoute(route.routeName,route.color.toLowerCase(),true,route.direction,route.stationIndex,null,true);
                           }
                         } style={
                           {
+                            minWidth: 'fit-content',
                             marginLeft: 'auto',
                             color: 'white',
-                            transform: 'scale(0.9)',
                           }
-                        }>{this.state?.stationRTData?.[sta[0]]?.[route.routeName]?.[0]?.stopsRemaining != null ?
+                        }>{this.state?.stationRTData?.[sta[0]]?.[`${route.routeName}-${route.direction}`]?.[0]?.stopsRemaining != null ?
                           <span style={{fontWeight: 'bold', color: 'white', fontSize: '1.25rem', fontFamily: 'Montserrat, sans-serif'}}>
                             <svg style={{color: 'white'}} xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" className="bi bi-broadcast" viewBox="0 0 16 16">
                               <path style={{color: 'white'}} d="M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 1 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707zM10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z"/>

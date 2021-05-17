@@ -94,10 +94,10 @@
 .station-info-list .main-list details summary {
   padding-top: .75rem;
   padding-bottom: .75rem;
-  padding-left: calc(15px + constant(safe-area-inset-left));
-  padding-right: calc(15px + constant(safe-area-inset-right));
-  padding-left: calc(15px + env(safe-area-inset-left));
-  padding-right: calc(15px + env(safe-area-inset-right));
+  padding-left: calc(1rem + constant(safe-area-inset-left));
+  padding-right: calc(1rem + constant(safe-area-inset-right));
+  padding-left: calc(1rem + env(safe-area-inset-left));
+  padding-right: calc(1rem + env(safe-area-inset-right));
 }
 .station-info-list .main-list details summary .routes {
   display: block;
@@ -168,9 +168,10 @@
   display: flex;
   flex-direction: column;
   font-size: .9rem;
+  margin-right: .5rem;
 }
 .to-station > * {
-  margin: 2px;
+  margin: 3px 0;
 }
 .bus-block button {
   background-color: #0e6b41de;
