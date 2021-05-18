@@ -3,7 +3,8 @@ import AppData from '../AppData'
 import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import bbox from '@turf/bbox';
-import mapboxgl from 'mapbox-gl/dist/mapbox-gl'; import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
+import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 class RouteModal extends React?.Component {
   intervals = [];
   fetchController = new AbortController();
@@ -241,7 +242,7 @@ class RouteModal extends React?.Component {
         isRouteChanged: (data?.data?.routeInfo?.filter(sta => sta?.suspendState === '1')?.length != 0)
       }, () => this.isDataReady.routeData = true);
       this.waitUntil(() => {
-        const details = document.querySelectorAll('details');
+        const details = document.querySelectorAll('.route-modal details');
         details?.forEach((targetDetail) => {
           targetDetail?.addEventListener('click', () => {
             details?.forEach((detail) => {

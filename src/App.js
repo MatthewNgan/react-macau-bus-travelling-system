@@ -1,10 +1,14 @@
 import './App.css';
 import React, { lazy, Suspense } from 'react';
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
+import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+
 const RouteModal = lazy(() => import('./modals/RouteModal'));
 const RouteView = lazy(() => import('./views/RouteView'));
 const AboutView = lazy(() => import('./views/AboutView'));
 const StationView = lazy(() => import('./views/StationView'));
+
+mapboxgl.accessToken = process.env.REACT_APP_MAPBOX_ACCESS_TOKEN;
 
 class App extends React.Component {
 
@@ -181,11 +185,6 @@ class ViewsTab extends React.Component {
   }
 
   componentDidMount() {
-    setTimeout(() => {
-      document.querySelector('#app').scroll({top: 2});
-      document.querySelector('#root').scroll({top: 2});
-      document.querySelector('body').scroll({top: 2});
-    }, 50);
     disableBodyScroll(document.querySelector('#app'));
   }
 
