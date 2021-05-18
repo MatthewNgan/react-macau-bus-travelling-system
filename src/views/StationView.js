@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import mapboxgl from 'mapbox-gl/dist/mapbox-gl';
+import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import * as helpers from '@turf/helpers';
 import jsonData from '../stations.json';
 import AppData from '../AppData'
@@ -9,7 +9,6 @@ import buffer from '@turf/buffer'
 import nearestPoint from '@turf/nearest-point';
 import distance from '@turf/distance';
 import { disableBodyScroll } from 'body-scroll-lock';
-import RouteModal from '../modals/RouteModal';
 import './StationView.css'
 
 class StationView extends React.Component {
@@ -55,7 +54,7 @@ class StationView extends React.Component {
     this.setState({
       currentList: list,
     }, () => {
-      const details = document.querySelectorAll('details');
+      const details = document.querySelectorAll('.station-info-list .main-list details');
       details.forEach((targetDetail) => {
         targetDetail.open = false;
         targetDetail.addEventListener('click', () => {
@@ -85,16 +84,6 @@ class StationView extends React.Component {
       nearestStationList: {},
       routesShowing: 5,
     }, () => document.querySelector('#station-view').dispatchEvent(new Event('scroll')));
-  }
-
-  returnHome = () => {
-    this.route = null;
-    this.color = null;
-    this.stationIndex = null;
-    this.setState({
-      shouldModalBeShown: false
-    });
-    document.querySelector('#station-route-modal .route-navbar')?.classList.toggle('stuck', false);
   }
 
   requestRoute = (route,color,direction,index=0) => {
@@ -397,7 +386,7 @@ class StationInfoList extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    if (prevProps.currentView !== 'station' && this.props.currentView === 'station') {
+    if (prevProps.currentView !== 'station' && this.props.currentView === 'station' && document.querySelector('.station-info-list .main-list details[open]') != null) {
       document.querySelector('.station-info-list .main-list details[open]').dispatchEvent(new Event('toggle'));
     }
   }

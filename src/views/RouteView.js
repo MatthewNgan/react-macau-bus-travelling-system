@@ -42,7 +42,13 @@ class RouteView extends React.Component {
         if (startTime < now && expireTime > now) {
           messages.push(item.message);
         }
-        this.setState({messages: messages});
+        this.setState({messages: messages}, () => {
+          setTimeout(() => {
+            document.querySelector('#app').scroll({top: 2});
+            document.querySelector('#root').scroll({top: 2});
+            document.querySelector('body').scroll({top: 2});
+          }, 25);
+        });
       }
     })
     .catch(error => {
