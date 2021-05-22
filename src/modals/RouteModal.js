@@ -4,6 +4,8 @@ import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import bbox from '@turf/bbox';
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
+import 'mapbox-gl/dist/mapbox-gl.css'
+import './RouteModal.css'
 import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 class RouteModal extends React?.Component {
   intervals = [];
@@ -449,10 +451,11 @@ class RouteModal extends React?.Component {
             for (let comingBus of stationBefore[i]?.busInfo) {
               if (count < 3) {
                 let routeTraffic = this.state?.routeTraffic[index-i-1]?.routeTraffic;
+                let speed = this.state?.locationData?.busInfoList?.filter((item) => item.busPlate === comingBus?.busPlate)?.[0]?.speed;
                 tempArr?.push({
                   'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
                   // 'plate': comingBus?.busPlate,
-                  'speed': comingBus?.speed,
+                  'speed': speed,
                   'stopsRemaining': i + 1,
                   'durationGet': true,
                   'duration': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),

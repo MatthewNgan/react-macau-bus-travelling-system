@@ -154,25 +154,27 @@ class App extends React.Component {
         <div id='route-shadow' className={
           `${this.state.isModalVisible ? 'route-shadow-shown' : ''}`
         } onClick={() => this.returnHome()}></div>
-        <RouteModal
-          id='route-modal'
-          route={this.state.modalroute}
-          color={this.state.modalcolor}
-          direction={this.state.modaldirection}
-          index={this.state.modalindex}
-          mapSwitch={this.state.modalmapswitch}
-          isMapEnabled={this.state.modalmapenabled}
-          shown={this.state.shouldRouteModalBeShown}
-          returnHome={this.returnHome}
-          calculateTime={this.calculateTime}
-          calculateDistance={this.calculateDistance}
-          handleNetworkError={this.handleNetworkError}></RouteModal>
-        <RouteView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></RouteView>
-        <AboutView currentView={this.state.currentView}></AboutView>
-        <StationView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></StationView>
-        <ViewsTab currentView={this.state.currentView} changeView={this.changeView}></ViewsTab>
-        <SkipWaitingNotifs isReloading={this.state.isReloading} reload={this.reloadHandler}></SkipWaitingNotifs>
-        <InternetErrorNotifs networkError={this.state.networkError} isReloading={this.state.isReloading} reload={this.reloadHandler}></InternetErrorNotifs>
+        <Suspense fallback={<div style={{height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem', fontWeight: 'bold'}}>載入中...</div>}>
+          <RouteModal
+            id='route-modal'
+            route={this.state.modalroute}
+            color={this.state.modalcolor}
+            direction={this.state.modaldirection}
+            index={this.state.modalindex}
+            mapSwitch={this.state.modalmapswitch}
+            isMapEnabled={this.state.modalmapenabled}
+            shown={this.state.shouldRouteModalBeShown}
+            returnHome={this.returnHome}
+            calculateTime={this.calculateTime}
+            calculateDistance={this.calculateDistance}
+            handleNetworkError={this.handleNetworkError}></RouteModal>
+          <RouteView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></RouteView>
+          <AboutView currentView={this.state.currentView}></AboutView>
+          <StationView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></StationView>
+          <ViewsTab currentView={this.state.currentView} changeView={this.changeView}></ViewsTab>
+          <SkipWaitingNotifs isReloading={this.state.isReloading} reload={this.reloadHandler}></SkipWaitingNotifs>
+          <InternetErrorNotifs networkError={this.state.networkError} isReloading={this.state.isReloading} reload={this.reloadHandler}></InternetErrorNotifs>
+        </Suspense>
       </div>
     );
   }

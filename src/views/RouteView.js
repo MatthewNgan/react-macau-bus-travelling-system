@@ -1,8 +1,6 @@
 import React from 'react';
 import AppData from '../AppData'
 import PullToRefresh from 'pulltorefreshjs'
-import './RouteView.css'
-import RouteModal from '../modals/RouteModal'
 
 class RouteView extends React.Component {
 
