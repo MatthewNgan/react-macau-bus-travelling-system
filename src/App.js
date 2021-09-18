@@ -178,7 +178,13 @@ class App extends React.Component {
             calculateTime={this.calculateTime}
             calculateDistance={this.calculateDistance}
             handleNetworkError={this.handleNetworkError}></RouteModal>
-          <RouteView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></RouteView>
+          <RouteView
+            toggleRouteModal={this.toggleRouteModal}
+            isModalVisible={this.state.isModalVisible}
+            calculateTime={this.calculateTime}
+            handleNetworkError={this.handleNetworkError}
+            currentView={this.state.currentView}
+            returnHome={this.returnHome}></RouteView>
           <AboutView currentView={this.state.currentView}></AboutView>
           <StationView toggleRouteModal={this.toggleRouteModal} isModalVisible={this.state.isModalVisible} calculateTime={this.calculateTime} handleNetworkError={this.handleNetworkError} currentView={this.state.currentView}></StationView>
           <ViewsTab currentView={this.state.currentView} changeView={this.changeView}></ViewsTab>
