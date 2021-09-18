@@ -109,6 +109,7 @@ class RouteModal extends React?.Component {
       routeTraffic: null,
       routeData: null,
       busData: null,
+      scrollToIndex: null,
     }, () => {
       this.fetchBusData();
       this.fetchRouteData();
@@ -136,6 +137,17 @@ class RouteModal extends React?.Component {
     if (this.busMap && this.state?.isMapEnabled && document.querySelector('.route-bus-info-container')) {
       document.querySelector('.route-bus-info-container')?.setAttribute('style','');
     }
+    this.waitUntil(() => {
+      if (this.state?.scrollToIndex != null) {
+        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+        let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
+        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(this.state?.scrollToIndex-3,0)];
+        targetParent.parentNode.open = true;
+        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
+      } else if (navigator?.geolocation) {
+        navigator.geolocation.getCurrentPosition(this.scrollToNearest);
+      }
+    })
 
   }
 
@@ -381,7 +393,8 @@ class RouteModal extends React?.Component {
             if (b) break;
           }
           let abbox = bbox(helpers?.lineString(routeCoords));
-          this.busMap?.fitBounds(abbox, {padding: 25, maxZoom: 15.5});
+          let padding = document.querySelector('#' + this.props?.id + ' #route-bus-map')?.offsetHeight * 0.1;
+          this.busMap?.fitBounds(abbox, {padding: padding, maxZoom: 16});
           let routeSource = this.busMap?.getSource('route');
           if (routeSource) {
             routeSource = this.busMap?.getSource('route')?._data;
@@ -607,6 +620,25 @@ class RouteModal extends React?.Component {
     }
     this.isMapRefreshed = false;
   }
+  
+  scrollToNearest = (pos) => {
+    let coords = pos.coords;
+    let closestStation = 0;
+    let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
+    for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
+      let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
+      if (distance < closestDistance) {
+        closestStation = index; closestDistance = distance;
+      }
+    }
+    this.setState({closestStationIndex: closestStation}, () => {
+      let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+      let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
+      let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(closestStation-3,0)];
+      targetParent.parentNode.open = true;
+      container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
+    });
+  }
 
   requestRoute() {
     this.setState({closestStationIndex: null});
@@ -658,33 +690,16 @@ class RouteModal extends React?.Component {
       else this.setState({ liveState: "speed"});
     }, 5000);
     this.intervals = [dataInterval, trafficInterval, liveStateInterval];
-    let scrollToNearest = (pos) => {
-      let coords = pos.coords;
-      let closestStation = 0;
-      let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
-      for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
-        let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
-        if (distance < closestDistance) {
-          closestStation = index; closestDistance = distance;
-        }
-      }
-      this.setState({closestStationIndex: closestStation}, () => {
-        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-        let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
-        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(closestStation-3,0)];
-        targetParent.parentNode.open = true;
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
-      });
-    }
     this.waitUntil(() => {
       if (this.state?.scrollToIndex != null) {
         let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
         let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
         let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(this.state?.scrollToIndex-3,0)];
         targetParent.parentNode.open = true;
+        this.busMap?.resize();
         container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
       } else if (navigator?.geolocation) {
-        navigator.geolocation.getCurrentPosition(scrollToNearest);
+        navigator.geolocation.getCurrentPosition(this.scrollToNearest);
       }
     })
   }
