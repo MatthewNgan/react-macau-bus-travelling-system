@@ -151,7 +151,7 @@ details[open] .route-station-bus-icon.moving {
 .route-info-box {
   width: 70vw;
   height: fit-content;
-  max-height: 40vh;
+  max-height: 20vh;
 }
 .route-info-box > * {
   padding: 10px;

@@ -126,7 +126,7 @@ class RouteView extends React.Component {
         </header>
         <div id='route-info-box' className='route-info-box modal route-modal'>
           <div className='route-header'>
-            <h5>溫馨提示</h5>
+            <h5 className='text-center'>溫馨提示</h5>
           </div>
           <div className='route-info-content'>
             <ul>

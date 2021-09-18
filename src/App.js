@@ -47,32 +47,42 @@ class App extends React.Component {
       });
     }
     let index = currentRoutes.findIndex(point => point.x === parseFloat(loc[0]) && point.y === parseFloat(loc[1]));
-    let thistraffic = parseFloat(traffic[nextStop-1].routeTraffic) > 0 ? parseFloat(traffic[nextStop-1].routeTraffic) : 2.25
+    // let thistraffic = parseFloat(traffic[nextStop-1].routeTraffic) > 0 ? parseFloat(traffic[nextStop-1].routeTraffic) : 2.25
     for (let i = index; i < traffic[nextStop-1].routeCoordinates.split(';').length-2; i++) {
       if (traffic[nextStop-1].routeCoordinates.split(';')[i] && traffic[nextStop-1].routeCoordinates.split(';')[i+1]) {
         let lon1 = traffic[nextStop-1].routeCoordinates.split(';')[i].split(',')[0];
         let lat1 = traffic[nextStop-1].routeCoordinates.split(';')[i].split(',')[1]
         let lon2 = traffic[nextStop-1].routeCoordinates.split(';')[i+1].split(',')[0];
         let lat2 = traffic[nextStop-1].routeCoordinates.split(';')[i+1].split(',')[1];
-        totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2)*thistraffic;
+        totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2);
+        // totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2)*thistraffic;
       }
     }
     // totaldistance += (bus.status === '1' ? 250 : 0)*traffic;
-    totaldistance += bus.status === '1' ? 375 : 0;
+    // totaldistance += bus.status === '1' ? 375 : 0;
     for (let route of traffic.slice(nextStop,targetStop)) {
-      let thistraffic = parseFloat(route.routeTraffic) > 0 ? parseFloat(route.routeTraffic) : 2.25;
-      if (route.realTraffic != null) {
-        thistraffic = parseFloat(route.realTraffic);
-      }
+      // let thistraffic = parseFloat(route.routeTraffic) > 0 ? parseFloat(route.routeTraffic) : 2.25;
+      // if (route.realTraffic != null) {
+      //   thistraffic = parseFloat(route.realTraffic);
+      // }
       for (let i = 0; i < route.routeCoordinates.split(';').length-2; i++) {
         let lon1 = route.routeCoordinates.split(';')[i].split(',')[0]; let lat1 = route.routeCoordinates.split(';')[i].split(',')[1];
         let lon2 = route.routeCoordinates.split(';')[i+1].split(',')[0]; let lat2 = route.routeCoordinates.split(';')[i+1].split(',')[1];
-        totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2)*thistraffic;
+        totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2);
+        // totaldistance += this.calculateDistance(lon1,lat1,lon2,lat2)*thistraffic;
       }
       // totaldistance += 250 * traffic;
-      totaldistance += 375;
+      // totaldistance += 375;
     }
-    return Math.ceil(totaldistance / 12.5);
+    // return Math.ceil(totaldistance / 12.5);
+    let unit = "米";
+    if (totaldistance >= 1000) {
+      totaldistance = Math.round(totaldistance / 100)/10;
+      unit = "公里";
+    } else {
+      totaldistance = Math.round(totaldistance);
+    }
+    return `${totaldistance} ${unit}`;
   }
 
   changeView = (view) => {
