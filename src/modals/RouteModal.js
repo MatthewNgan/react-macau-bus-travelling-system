@@ -76,6 +76,7 @@ class RouteModal extends React?.Component {
       routeData: null,
       routeTraffic: null,
       shown: false,
+      liveState: "station",
     }
   }
 
@@ -363,15 +364,22 @@ class RouteModal extends React?.Component {
           // console?.log(from, 'focusing station');
           let closestBusLoc = this.state?.arrivingBuses[index][0]?.location;
           let closestStationIndex = this.state?.arrivingBuses[index][0]?.currentStation - 1;
-          let routeCoords = [closestBusLoc];
-          for (let p of this.state?.routeTraffic?.slice(closestStationIndex, index)) {
-            for (let line of p?.routeCoordinates?.split(';')) {
+          let routeCoords = [stationLoc];
+          for (let p of this.state?.routeTraffic?.slice(closestStationIndex, index).reverse()) {
+            let b = false;
+            for (let line of p?.routeCoordinates?.split(';').reverse()) {
               if (line?.includes(',')) {
-                routeCoords?.push([parseFloat(line?.split(',')[0]),parseFloat(line?.split(',')[1])]);
+                let coords = [parseFloat(line?.split(',')[0]),parseFloat(line?.split(',')[1])];
+                // console.log(coords,closestBusLoc);
+                routeCoords?.push(coords);
+                if (b) break;
+                if (coords[0] === closestBusLoc[0] && coords[1] === closestBusLoc[1]) {
+                  b = true;
+                }
               }
             }
+            if (b) break;
           }
-          routeCoords?.push(stationLoc);
           let abbox = bbox(helpers?.lineString(routeCoords));
           this.busMap?.fitBounds(abbox, {padding: 25, maxZoom: 15.5});
           let routeSource = this.busMap?.getSource('route');
@@ -457,10 +465,10 @@ class RouteModal extends React?.Component {
                   // 'plate': comingBus?.busPlate,
                   'speed': speed,
                   'stopsRemaining': i + 1,
-                  'durationGet': true,
-                  'duration': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
+                  'distance': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
+                  // 'duration': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
                   'routeTraffic': routeTraffic,
-                  'location': [busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],
+                  'location': [parseFloat(busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude), parseFloat(busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude)],
                   'currentStation': index - i,
                 });
                 count++;
@@ -645,7 +653,11 @@ class RouteModal extends React?.Component {
       this.fetchTrafficData();
       this.setupRoutesOnMap();
     },30000);
-    this.intervals = [dataInterval, trafficInterval];
+    let liveStateInterval = setInterval(() => {
+      if (this.state.liveState === "speed") this.setState({ liveState: "station"});
+      else this.setState({ liveState: "speed"});
+    }, 5000);
+    this.intervals = [dataInterval, trafficInterval, liveStateInterval];
     let scrollToNearest = (pos) => {
       let coords = pos.coords;
       let closestStation = 0;
@@ -1081,6 +1093,7 @@ class RouteModal extends React?.Component {
                   arrivingBuses={this.state?.arrivingBuses}
                   closestStationIndex={this.state?.closestStationIndex}
                   gettingArrivingBuses={this.state?.gettingArrivingBuses}
+                  liveState={this.state?.liveState}
                 ></RouteStationBlock>
               </div>
               : <div className='route-loading route-bus-info-container'>載入中...</div>
@@ -1241,7 +1254,7 @@ class RouteStationBlock extends React?.Component {
                   {
                     arrivingBuses?.[index]?.slice()?.map(arrivingBus => 
                       <li key={arrivingBus?.plate}>
-                        <span><code className={color?.toLowerCase()}>{arrivingBus?.plate}</code> <small>{arrivingBus?.speed}km/h</small> 距離 {arrivingBus?.stopsRemaining} 站</span> 
+                        <span><code className={color?.toLowerCase()}>{arrivingBus?.plate}</code> <small>{ this.props?.liveState === 'speed' ? `車速 ${arrivingBus?.speed}km/h` : `距離 ${arrivingBus?.distance}` }</small></span> 
                         <span className={
                           `route-time-remaining route-live${parseFloat(arrivingBus?.routeTraffic) <= 1 && parseFloat(arrivingBus?.routeTraffic) > 0 ? ' green' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 2 ? ' yellow' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 3 ? ' orange' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 4 ? ' red' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) >= 5 ? ' brown' : ''}`
                           }>
@@ -1249,11 +1262,12 @@ class RouteStationBlock extends React?.Component {
                             <path fillRule='evenodd' d='M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 0 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707z'/>
                             <path d='M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'/>
                           </svg>
-                          {
+                          <span> {arrivingBus?.stopsRemaining} 站</span>
+                          {/* {
                             arrivingBus?.duration > 30 ?
                             <span> {arrivingBus?.duration <= 3600 ? (Math?.round((arrivingBus?.duration) / 60)) + ' 分鐘' : '多於 ' + Math?.floor((arrivingBus?.duration) / 3600) + ' 小時'}</span>
                             : <span> 即將進站</span>
-                          }
+                          } */}
                         </span>
                       </li>
                     )
