@@ -203,17 +203,17 @@ class StationView extends React.Component {
       touchPitch: false,
     });
     this.stationMap.touchZoomRotate.disableRotation();
-    this.stationMap.addControl(
-      new mapboxgl.GeolocateControl({
-        fitBoundsOptions: {
-          maxZoom: 16.5
-        },
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-      })
-    );
+    let geolocate = new mapboxgl.GeolocateControl({
+      fitBoundsOptions: {
+        maxZoom: 16.5
+      },
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+    })
+    this.stationMap.addControl(geolocate);
     this.stationMap.on('load', () => {
+      geolocate.trigger();
       let centerElement = <div className='center'></div>
       let centerContainer = document.createElement('div')
       ReactDOM.render(centerElement, centerContainer);

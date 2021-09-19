@@ -1,5 +1,5 @@
 export default {
-  corsProxy: process.env.REACT_APP_PROXY, appVersion: 'v2.3.5',
+  corsProxy: process.env.REACT_APP_PROXY, appVersion: 'v2.3.6',
   routeMainPoints: {
     '1': ['關閘','媽閣'],
     '1A': ['筷子基街','新口岸/科英布拉街'],
@@ -27,6 +27,7 @@ export default {
     '11': ['媽閣','氹仔官也街'],
     '12': ['永寧廣場','外港碼頭'],
     '15': ['海洋花園','九澳村'],
+    '15T': ['黑沙海灘','蝴蠂谷大馬路'],
     '16': ['牧場街','下環街市'],
     '16S': ['牧場街','媽閣'],
     '17': ['白鴿巢','文化中心'],

@@ -138,6 +138,7 @@ class RouteView extends React.Component {
           <div className='route-info-content'>
             <ul>
               {this.state.messages.map(message => <li key={message.slice(0,2)}>{message}</li>)}
+              <li><a href="https://app.ssm.gov.mo/phd"><img height="64" src={require("../images/icons/health-code.png").default} alt="澳門健康碼" /></a></li>
             </ul>
           </div>
         </div>
