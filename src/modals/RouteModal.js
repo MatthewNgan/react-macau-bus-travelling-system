@@ -49,6 +49,7 @@ class RouteModal extends React?.Component {
   isMapLoaded = false
   eventListenersFunc = []
   busMap = null
+  mapShowBig = false
 
   busLayerGroup = []
   stationLayerGroup = []
@@ -519,36 +520,69 @@ class RouteModal extends React?.Component {
       touchPitch: false,
     });
     this.busMap?.touchZoomRotate?.disableRotation();
-    this.busMap?.on('zoomend', () => {
-      if (this.busMap?.getZoom() > 13.5) {
-        for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-          mapStation?.classList?.toggle('shown',true);
-        }
-      } else {
-        for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-          mapStation?.classList?.toggle('shown',false);
-        }
-      }
+    this.busMap?.on('zoom', () => {
       if (this.busMap?.getZoom() > 14) {
-        for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-          mapImportantStationText?.classList?.toggle('shown',true);
+        if (!this.mapShowBig) {
+          for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+            mapStation?.classList?.toggle('shown',true);
+          }
+          for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+            mapImportantStationText?.classList?.toggle('shown',true);
+          }
+          for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+            busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+            busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+          }
+          if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
+          this.mapShowBig = true;
         }
-        for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-          busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
-          busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
-        }
-        if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
       } else {
-        for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-          mapImportantStationText?.classList?.toggle('shown',false);
+        if (this.mapShowBig) {
+          for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+            mapStation?.classList?.toggle('shown',false);
+          }
+          for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+            mapImportantStationText?.classList?.toggle('shown',false);
+          }
+          for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+            busMarker.style.width = '14px';
+            busMarker.style.height = '14px';
+          }
+          if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
+          this.mapShowBig = false;
         }
-        for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-          busMarker.style.width = '14px';
-          busMarker.style.height = '14px';
-        }
-        if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
       }
-    });
+    })
+    // this.busMap?.on('zoomend', () => {
+    //   if (this.busMap?.getZoom() > 13.5) {
+    //     for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+    //       mapStation?.classList?.toggle('shown',true);
+    //     }
+    //   } else {
+    //     for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+    //       mapStation?.classList?.toggle('shown',false);
+    //     }
+    //   }
+    //   if (this.busMap?.getZoom() > 14) {
+    //     for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+    //       mapImportantStationText?.classList?.toggle('shown',true);
+    //     }
+    //     for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+    //       busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+    //       busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+    //     }
+    //     if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
+    //   } else {
+    //     for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+    //       mapImportantStationText?.classList?.toggle('shown',false);
+    //     }
+    //     for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+    //       busMarker.style.width = '14px';
+    //       busMarker.style.height = '14px';
+    //     }
+    //     if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
+    //   }
+    // });
     this.busMap?.on('load', () => this.isMapLoaded = true);
     this.busMap?.on('styledata', () => {
       this.isMapLoaded = true;
@@ -680,15 +714,15 @@ class RouteModal extends React?.Component {
     let dataInterval = setInterval(() => {
       this.fetchBusData();
       this.setupBusMarkersOnMap();
-    }, 10000);
+    }, 5000);
     let trafficInterval = setInterval(() => {
       this.fetchTrafficData();
       this.setupRoutesOnMap();
-    },30000);
+    },15000);
     let liveStateInterval = setInterval(() => {
       if (this.state.liveState === "speed") this.setState({ liveState: "station"});
       else this.setState({ liveState: "speed"});
-    }, 5000);
+    }, 7500);
     this.intervals = [dataInterval, trafficInterval, liveStateInterval];
     this.waitUntil(() => {
       if (this.state?.scrollToIndex != null) {
@@ -767,6 +801,11 @@ class RouteModal extends React?.Component {
         this.getArrivingBuses(this.currentOpenedIndex);
         this.settingUpBusLayer = false;
       });
+    }
+    else {
+      this.waitUntil(() => {
+        this.getArrivingBuses(this.currentOpenedIndex);
+      })
     }
   }
   
@@ -1230,7 +1269,7 @@ class RouteStationBlock extends React?.Component {
                       <span className={`route-station-bus-icon moving ${color?.toLowerCase()}`}>
                           {
                             busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 1 ?
-                            <span>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length}</span>
+                            <span style={{ fontWeight: 'bold' }}>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length}</span>
                             : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                           }
                       </span>
@@ -1240,7 +1279,7 @@ class RouteStationBlock extends React?.Component {
                       <span className={`route-station-bus-icon ${color?.toLowerCase()}`}>
                         {
                           busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 1 ?
-                          <span>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length}</span>
+                          <span style={{ fontWeight: 'bold' }}>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length}</span>
                           : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                         }
                       </span>

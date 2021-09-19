@@ -4,7 +4,7 @@
 	"lang": "zh-Hant",
 	"start_url": "/",
 	"background_color": "#18703f",
-	"theme_color": "#12522e",
+	"theme_color": "#000000",
 	"dir": "ltr",
 	"display": "standalone",
 	"orientation": "portrait-primary",
