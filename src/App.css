@@ -346,10 +346,15 @@ summary .route-station-line {
   flex-direction: row;
   justify-content: center;
   align-items: center;
-  border-bottom: 1px solid #00000022;
+  /* border-bottom: 1px solid #00000022;
   background-color: #ffffffaa;
   backdrop-filter: blur(50px);
-  -webkit-backdrop-filter: blur(50px);
+  -webkit-backdrop-filter: blur(50px); */
+  border-bottom: 1px solid #55555555;
+  background-color: #ffffff11;
+  backdrop-filter: blur(50px) brightness(0.1);
+  -webkit-backdrop-filter: blur(50px) brightness(0.1);
+  color: white;
 }
 .view-header-top > * {
   /* margin-left: 10px; */
