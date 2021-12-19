@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import AppData from '../AppData'
 import * as helpers from '@turf/helpers'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
@@ -6,18 +6,15 @@ import bbox from '@turf/bbox';
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import 'mapbox-gl/dist/mapbox-gl.css'
 import './RouteModal.css'
-import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
-class RouteModal extends React?.Component {
-  intervals = [];
-  fetchController = new AbortController();
-  isDataReady = {
-    bridgeData: false,
-    busData: false,
-    locationData: false,
-    routeData: false,
-    routeTraffic: false,
-  }
-  bridgeCoords = {
+import { disableBodyScroll } from 'body-scroll-lock';
+import { isLineOnLine } from '@turf/boolean-contains';
+
+function RouteModal(props) {
+  let mapShowBig = false;
+
+  let intervals = [];
+  let fetchController = new AbortController();
+  const bridgeCoords = {
     '01': [[[
       [113.5608566,22.2047643],
       [113.5626161,22.1991966],
@@ -41,474 +38,83 @@ class RouteModal extends React?.Component {
       [113.5337448,22.1786227],
       [113.5322535,22.1784935]
     ]],2000],
-  }
-  bridgeRoute = {}
-  currentWarning = 0
-  currentOpenedIndex = null
-  isScrolling = null
-  isMapLoaded = false
-  eventListenersFunc = []
-  busMap = null
-  mapShowBig = false
+  };
+  let bridgeRoute = {};
+  let currentWarning = 0;
+  let currentPopup = null;
+  let isScrolling = null;
+  let eventListenersFunc = [];
+  let busLayerGroup = useRef([]);
+  let stationLayerGroup = useRef([]);
+  let settingUpBusLayer = false;
+  let settingUpStationLayer = false;
+  let settingUpRouteLayer = false;
+  let isMapRefreshed = useRef(false);
+  let routeMapData = useRef({
+    'type': 'geojson',
+    'data': {
+      'type': 'FeatureCollection',
+      'features': []
+    },
+  });
 
-  busLayerGroup = []
-  stationLayerGroup = []
-  focusingStation = false
-  settingUpBusLayer = false
-  settingUpStationLayer = false
-  settingUpRouteLayer = false
-  isMapRefreshed = false
+  const busMap = useRef(null);
+  const [arrivingBuses, setArrivingBuses] = useState({});
+  const [bridgeData, setBridgeData] = useState(null);
 
-  constructor(props) {
-    super(props);
-    this.state = {
-      arrivingBuses: {},
-      bridgeData: null,
-      busColor: null,
-      busRoute: null,
-      busData: null,
-      busDirection: 0,
-      closestStationIndex: null,
-      scrollToIndex: null,
-      directionAvailable: '2',
-      gettingArrivingBuses: false,
-      isMapEnabled: false,
-      locationData: null,
-      routeData: null,
-      routeTraffic: null,
-      shown: false,
-      liveState: "station",
-    }
-  }
-
-  busIconSrc = () => { return require(`../images/icons/${this.state?.busColor?.toLowerCase()}-bus-icon.png`)?.default }
-  lastBusIconSrc = () => { return require(`../images/icons/${this.state?.busColor?.toLowerCase()}-bus-icon-last.png`)?.default }
-
-  changeDirection() {
-    this.fetchController?.abort();
-    this.fetchController = new AbortController();
-    const changeDirectionIcon = document.querySelector('#route-changedirection-icon');
-    if (changeDirectionIcon) changeDirectionIcon.disabled = true;
-    setTimeout(() => {
-      const changeDirectionIcon = document.querySelector('#route-changedirection-icon');
-      if (changeDirectionIcon) changeDirectionIcon.disabled = false;
-    }, 5000);
-    const details = document.querySelectorAll('details');
-    details?.forEach(detail => {
-      detail?.removeAttribute('open');
-    });
-    this.bridgeRoute = {};
-    this.isDataReady = {
-      busData: false,
-      bridgeData: false,
-      locationData: false,
-      routeData: false,
-      routeTraffic: false,
-    }
-    this.setState({
-      busDirection: (this.state?.busDirection === 0) ? 1 : 0,
-      routeTraffic: null,
-      routeData: null,
-      busData: null,
-      scrollToIndex: null,
-    }, () => {
-      this.fetchBusData();
-      this.fetchRouteData();
-      this.fetchTrafficData();
-    });
-    if (this.busLayerGroup != []) {
-      for (let marker of this.busLayerGroup) {
-        marker?.remove();
-      }
-    }
-    this.busLayerGroup = []
-    if (this.stationLayerGroup != []) {
-      for (let marker of this.stationLayerGroup) {
-        marker?.remove();
-      }
-    }
-    this.stationLayerGroup = []
-    if (this.state?.isMapEnabled && this.busMap && this.busMap?.getLayer('route')) {
-      this.busMap?.removeLayer('route');
-      this.busMap?.removeSource('route');
-    }
-    this.setupStationMarkersOnMap();
-    this.setupBusMarkersOnMap();
-    this.setupRoutesOnMap();
-    if (this.busMap && this.state?.isMapEnabled && document.querySelector('.route-bus-info-container')) {
-      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
-    }
-    this.waitUntil(() => {
-      if (this.state?.scrollToIndex != null) {
-        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-        let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
-        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(this.state?.scrollToIndex-3,0)];
-        targetParent.parentNode.open = true;
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
-      } else if (navigator?.geolocation) {
-        navigator.geolocation.getCurrentPosition(this.scrollToNearest);
-      }
-    })
-
+  const [busData, setBusData] = useState(null);
+  const [busDirection, setBusDirection] = useState(0);
+  const [closestStationIndex, setClosestStationIndex] = useState(null);
+  const [currentOpenedIndex, setCurrentOpenedIndex] = useState(null);
+  const [scrollToIndex, setScrollToIndex] = useState(null);
+  const [scrollingToIndex, setScrollingToIndex] = useState(false);
+  const [directionAvailable, setDirectionAvailable] = useState('2');
+  const [gettingArrivingBuses, setGettingArrivingBuses] = useState(false);
+  const [isMapEnabled, _setIsMapEnabled] = useState(false);
+  const isMapEnabledRef = useRef(false);
+  const setIsMapEnabled = (i) => {
+    _setIsMapEnabled(i);
+    isMapEnabledRef.current = i;
   }
 
-  disableMap() {
-    this.setState({
-      isMapEnabled: false,
-    }, () => {
-      localStorage.isRouteMapEnabled = false;
-      if (this.busMap) {
-        this.busMap?.remove();
-      }
-      this.busMap = null;
-      this.isMapLoaded = false;
-      this.busLayerGroup = [];
-      this.stationLayerGroup = [];
-      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
-      let thisTop = document.querySelector('.route-navbar')?.offsetTop;
-      let titleHeight = document.querySelector('.route-bus-title')?.offsetHeight;
-      document.querySelector('.route-navbar')?.classList?.toggle('stuck', thisTop > titleHeight);
-    });
+  const [isDataReady, setIsDataReady] = useState({
+    bridgeData: false,
+    busData: false,
+    locationData: false,
+    routeData: false,
+    routeTraffic: false,
+  });
+  const [onMount, setOnMount] = useState(true);
+  const [isMapLoaded, _setIsMapLoaded] = useState(false);
+  const isMapLoadedRef = useRef(false);
+  const setIsMapLoaded = (i) => {
+    _setIsMapLoaded(i);
+    isMapLoadedRef.current = i;
   }
+  const [isRouteChanged, setIsRouteChanged] = useState(false);
+  const [locationData, setLocationData] = useState(null);
+  const [routeData, setRouteData] = useState(null);
+  const [routeTraffic, setRouteTraffic] = useState(null);
+  const [tempRouteTraffic, setTempRouteTraffic] = useState(null);
+  const [shown, setShown] = useState(false);
+  const [liveState, setLiveState] = useState('station');
+  const [resettingData, setResettingData] = useState(false);
 
-  enableMap() {
-    this.setState({
-      isMapEnabled: true,
-    }, () => {
-      this.isMapRefreshed = false;
-      this.initMap();
-      this.setupBusMarkersOnMap();
-      this.setupStationMarkersOnMap();
-      this.setupRoutesOnMap();
-      document.querySelector('.route-bus-info-container')?.setAttribute('style','');
-      document.querySelector('.route-modal')?.scroll({top: 0});
-      document.querySelector('.route-modal')?.style?.setProperty('--title-offset-top',`${document.querySelector('.route-bus-title')?.offsetTop}px`);
-      this.busMap?.resize();
-    });
-    localStorage.isRouteMapEnabled = true;
-  }
-
-  fetchBusData() {
-    this.isDataReady.busData = false;
-    this.isDataReady.locationData = false;
-    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}`,{signal: this.fetchController?.signal})
-    ?.then(response => {
-      if(response?.status >= 200 && response?.status < 300) {
-          return response?.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response?.status);
-      }
-    })
-    ?.then(data => {
-      this.props?.handleNetworkError(false);
-      this.setState({
-        busData: data?.data
-      }, () => this.isDataReady.busData = true);
-    })
-    ?.catch(error => {
-      console?.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.busData = true;
-        this.props.handleNetworkError(true);
-      }
-    });
-    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}&lang=zh-tw`,{signal: this.fetchController?.signal})
-    ?.then(response => {
-      if(response?.status >= 200 && response?.status < 300) {
-          return response?.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response?.status);
-      }
-    })
-    ?.then(data => {
-      this.props?.handleNetworkError(false);
-      this.setState({
-        locationData: data?.data,
-      }, () => this.isDataReady.locationData = true);
-    })
-    ?.catch(error => {
-      console?.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.locationData = true;
-        this.props?.handleNetworkError(true);
-      }
-    });
-  }
-
-  fetchRouteData() {
-    this.isDataReady.routeData = false;
-    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteData.html?routeName=${this.state?.busRoute}&dir=${this.state?.busDirection}&lang=zh-tw`,{signal: this.fetchController?.signal})
-    ?.then(response => {
-      if(response?.status >= 200 && response?.status < 300) {
-          return response?.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response?.status);
-      }
-    })
-    ?.then(data => {
-      this.props?.handleNetworkError(false);
-      for (let i = 0; i < data?.data?.routeInfo?.length-2; i++) {
-        if (data?.data?.routeInfo?.slice()[i]?.staCode[0] != data?.data?.routeInfo?.slice()[i+1]?.staCode[0] && data?.data?.routeInfo?.slice()[i]?.staCode[0] != 'C' && data?.data?.routeInfo?.slice()[i+1]?.staCode[0] != 'C') {
-          this.bridgeRoute[i] = [data?.data?.routeInfo?.slice()[i]?.staCode[0],data?.data?.routeInfo?.slice()[i+1]?.staCode[0]];
-        }
-      }
-      this.setState({
-        routeData: data?.data,
-        directionAvailable: data?.data?.direction,
-        isRouteChanged: (data?.data?.routeInfo?.filter(sta => sta?.suspendState === '1')?.length != 0)
-      }, () => this.isDataReady.routeData = true);
-      this.waitUntil(() => {
-        const details = document.querySelectorAll('.route-modal details');
-        details?.forEach((targetDetail) => {
-          targetDetail?.addEventListener('click', () => {
-            details?.forEach((detail) => {
-              if (detail !== targetDetail) {
-                detail?.removeAttribute('open');
-              }
-            });
-          });
-        });
-      });
-    })
-    ?.catch(error => {
-      console?.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.routeData = true;
-        this.props?.handleNetworkError(true);
-      }
-    });
-  }
-
-  fetchTrafficData() {
-    this.isDataReady.trafficData = false;
-    this.isDataReady.bridgeData = false;
-    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37011/its/Bridge/getTime.html?lang=zh_tw`,{signal: this.fetchController?.signal})
-    ?.then(response => {
-      if(response?.status >= 200 && response?.status < 300) {
-          return response?.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response?.status);
-      }
-    })
-    ?.then(data => {
-      this.props?.handleNetworkError(false);
-      this.setState({bridgeData: data?.data?.timeArray}, () => this.isDataReady.bridgeData = true);
-    })
-    ?.catch(error => {
-      console?.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.bridgeData = true;
-        this.props?.handleNetworkError(true);
-      }
-    });
-    
-    fetch(`${AppData?.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-this.state?.busRoute?.length) + this.state?.busRoute}&direction=${this.state?.busDirection}&indexType=00&device=web`,{signal: this.fetchController?.signal})
-    ?.then(response => {
-      if(response?.status >= 200 && response?.status < 300) {
-          return response?.json();
-      } else {
-          throw new Error('Server/Network Error: ' + response?.status);
-      }
-    })
-    ?.then(data => {
-      this.props?.handleNetworkError(false);
-      let tempData = data?.data;
-      this.waitUntil(() => {
-        let jamRouteIndex = this.state?.busData?.routeInfo?.findIndex((sta) => sta?.staCode?.includes('M84'));
-        if (jamRouteIndex > -1) {
-          jamRouteIndex -= 1;
-          tempData[jamRouteIndex].routeTraffic = Math?.max(2,Math?.pow(parseInt(tempData[jamRouteIndex]?.routeTraffic),2));
-        }
-        if (this.busRoute === '32') {
-          let cloneRouteIndex = this.state?.busData?.routeInfo?.findIndex((sta) => sta?.staCode?.includes('M254/1'));
-          if (cloneRouteIndex > -1) {
-            cloneRouteIndex -= 1;
-            tempData[cloneRouteIndex].realTraffic = parseInt(tempData[cloneRouteIndex]?.routeTraffic) / 8
-          }
-        }
-        for (let bridgeRoute in this.bridgeRoute) {
-          let direction = null;
-          if (this.bridgeRoute[bridgeRoute][0] === 'T') {
-            direction = 0;
-          } else {
-            direction = 1;
-          }
-          let onbridge;
-          for (let point of tempData?.slice()[parseInt(bridgeRoute)]?.routeCoordinates?.split(';')) {
-            if (point != '') {
-              let loc = point?.split(',');
-              for (let id in this.bridgeCoords) {
-                let poly = helpers?.polygon(this.bridgeCoords[id][0]);
-                let pt = helpers?.point([parseFloat(loc[0]),parseFloat(loc[1])]);
-                if (booleanPointInPolygon(pt,poly)) {
-                  onbridge = id;
-                  break;
-                }
-              }
-              if (onbridge) {
-                break;
-              }
-            }
-          }
-          let timeToCrossBridgeInSec = parseInt(this.state?.bridgeData?.slice()[direction]?.times?.filter(bridge => bridge?.id === onbridge)[0]?.time);
-          if (timeToCrossBridgeInSec > -1) {
-            let speed = (this.bridgeCoords[onbridge]?.slice()[1] / timeToCrossBridgeInSec * 3.6) > 52 ? 52 : this.bridgeCoords[onbridge]?.slice()[1] / timeToCrossBridgeInSec * 3.6;
-            let traffic = 1 / (speed / 3.6 * 60 / 750);
-            tempData[parseInt(bridgeRoute)].routeTraffic = traffic?.toString();
-          }
-        }
-        this.setState({routeTraffic: tempData}, () => this.isDataReady.routeTraffic = true);
-      },false);
-    })
-    ?.catch(error => {
-      console?.log(error);
-      if (error instanceof TypeError) {
-        this.isDataReady.routeTraffic = true;
-        this.props?.handleNetworkError(true);
-      }
-    });
-  }
+  const [setupBusMarkersOnMap, setSetupBusMarkersOnMap] = useState(false);
+  const [setupStationMarkersOnMap, setSetupStationMarkersOnMap] = useState(false);
+  const [setupRoutesOnMap, setSetupRoutesOnMap] = useState(false);
   
-  focusStation(index=this.currentOpenedIndex, from='n/a') {
-    setTimeout(() => {
-      if (this.state?.isMapEnabled && this.busMap && this.focusingStation) {
-        let stationLoc = [this.state?.locationData?.stationInfoList?.slice()[index]?.longitude,this.state?.locationData?.stationInfoList?.slice()[index]?.latitude];
-        if (this.state?.arrivingBuses[index] && this.state?.arrivingBuses[index][0] && this.state?.arrivingBuses[index][0]?.currentStation >= 0) {
-          // console?.log(from, 'focusing station');
-          let closestBusLoc = this.state?.arrivingBuses[index][0]?.location;
-          let closestStationIndex = this.state?.arrivingBuses[index][0]?.currentStation - 1;
-          let routeCoords = [stationLoc];
-          for (let p of this.state?.routeTraffic?.slice(closestStationIndex, index).reverse()) {
-            let b = false;
-            for (let line of p?.routeCoordinates?.split(';').reverse()) {
-              if (line?.includes(',')) {
-                let coords = [parseFloat(line?.split(',')[0]),parseFloat(line?.split(',')[1])];
-                // console.log(coords,closestBusLoc);
-                routeCoords?.push(coords);
-                if (b) break;
-                if (coords[0] === closestBusLoc[0] && coords[1] === closestBusLoc[1]) {
-                  b = true;
-                }
-              }
-            }
-            if (b) break;
-          }
-          let abbox = bbox(helpers?.lineString(routeCoords));
-          let padding = document.querySelector('#' + this.props?.id + ' #route-bus-map')?.offsetHeight * 0.1;
-          this.busMap?.fitBounds(abbox, {padding: padding, maxZoom: 16});
-          let routeSource = this.busMap?.getSource('route');
-          if (routeSource) {
-            routeSource = this.busMap?.getSource('route')?._data;
-            for (let [i,features] of routeSource?.features?.slice()?.entries()) {
-              if (i >= index || i < closestStationIndex) {
-                features.properties.opacity = 0.25;
-              } else {
-                features.properties.opacity = 1;
-              }
-            }
-            this.busMap?.getSource('route')?.setData(routeSource);
-          }
-          for (let i = 0; i < this.stationLayerGroup?.length; i++) {
-            if (i > index || i < closestStationIndex) {
-              this.stationLayerGroup.slice().reverse()[i].getElement().style.opacity = 0;
-            } else if (i === index || i === closestStationIndex) {
-              this.stationLayerGroup.slice().reverse()[i].getElement().style.opacity = 1;
-            }
-            else {
-              this.stationLayerGroup.slice().reverse()[i].getElement().style.removeProperty('opacity');
-            }
-          }
-          let busPlateWithSameDistance = [];
-          for (let arrivingBus of  this.state?.arrivingBuses[index]?.slice()){
-            if (arrivingBus?.stopsRemaining === this.state?.arrivingBuses[index][0]?.stopsRemaining) {
-              busPlateWithSameDistance?.push(arrivingBus?.plate);
-            }
-          }
-          let busElementGoingToShow = [...document.querySelectorAll('.route-bus-marker')]?.filter(bus => {
-            return busPlateWithSameDistance?.includes(bus?.id?.replace('bus-',''));
-          });
-          for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            if (!busElementGoingToShow?.includes(busElement)) {
-              busElement?.style?.setProperty('visibility', 'hidden');
-            } else {
-              busElement?.style?.removeProperty('visibility');
-            }
-          }
-        } else {
-          if (stationLoc[0] != null && stationLoc[1] != null) {
-            this.busMap?.flyTo({
-              center: stationLoc,
-              zoom: 15.5,
-            });
-          }
-          let routeSource = this.busMap?.getSource('route');
-          if (routeSource) {
-            routeSource = this.busMap?.getSource('route')?._data;
-            for (let features of routeSource?.features?.slice()) {
-              features.properties.opacity = 1;
-            }
-            this.busMap?.getSource('route')?.setData(routeSource);
-          }
-          for (let i = 0; i < this.stationLayerGroup?.length; i++) {
-            this.stationLayerGroup?.slice()?.reverse()[i]?.getElement()?.style?.removeProperty('opacity');
-          }
-          for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-            busElement?.style?.removeProperty('visibility');
-          }
-        }
-      }
-    },150);
-  }
+  const [focusingStation, setFocusingStation] = useState(false);
 
-  getArrivingBuses(index = this.currentOpenedIndex) {
-    if (index != null) {
-      this.setState({gettingArrivingBuses: true});
-      this.waitUntil(() => {
-        let busInfoLocations = this.state?.locationData?.busInfoList;
-        if (busInfoLocations && this.state?.routeTraffic) {
-          let stationBefore = this.state?.busData?.routeInfo?.slice(0, index)?.reverse();
-          let count = 0;
-          let tempArr = [];
-          for (let i = 0; i < index; i++) {
-            for (let comingBus of stationBefore[i]?.busInfo) {
-              if (count < 3) {
-                let routeTraffic = this.state?.routeTraffic[index-i-1]?.routeTraffic;
-                let speed = this.state?.locationData?.busInfoList?.filter((item) => item.busPlate === comingBus?.busPlate)?.[0]?.speed;
-                tempArr?.push({
-                  'plate': `${comingBus?.busPlate?.substring(0,2)}-${comingBus?.busPlate?.substring(2,4)}-${comingBus?.busPlate?.substring(4,6)}`,
-                  // 'plate': comingBus?.busPlate,
-                  'speed': speed,
-                  'stopsRemaining': i + 1,
-                  'distance': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
-                  // 'duration': this.props?.calculateTime(this.state?.routeTraffic,index-i,index,[busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude,busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude],comingBus),
-                  'routeTraffic': routeTraffic,
-                  'location': [parseFloat(busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.longitude), parseFloat(busInfoLocations?.filter(bus => bus?.busPlate === comingBus?.busPlate)[0]?.latitude)],
-                  'currentStation': index - i,
-                });
-                count++;
-              }
-            }
-          }
-          tempArr?.sort((x,y) => (x?.duration > y?.duration) ? 1 : ((x?.duration < y?.duration) ? -1 : 0));
-          this.setState(prevState => ({
-            arrivingBuses: {
-              ...prevState?.arrivingBuses,
-              [index]: tempArr,
-            }
-          }));
-          this.focusStation(this.currentOpenedIndex, 'getArrivingBuses');
-        }
-        this.setState({gettingArrivingBuses: false});
-      },true);
-    }
-  }
+  const busIconSrc = () => { return require(`../images/icons/${props.color.toLowerCase()}-bus-icon.png`).default };
+  const lastBusIconSrc = () => { return require(`../images/icons/${props.color.toLowerCase()}-bus-icon-last.png`).default };
 
-  initMap() {
+  const initMap = () => {
     let mapStyle = 'matthewngan/ckjzsnvju0uqx17o6891qzch5';
-    if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       mapStyle = 'matthewngan/ckjzsftuo0uik17o62fm4oahc';
     }
-    this.busMap = new mapboxgl.Map({
+    busMap.current = new mapboxgl.Map({
       container: 'route-bus-map',
       style: 'mapbox://styles/' + mapStyle, // stylesheet location
       center: [113.5622406,22.166422], // starting position [lng, lat]
@@ -519,768 +125,1157 @@ class RouteModal extends React?.Component {
       dragRotate: false,
       touchPitch: false,
     });
-    this.busMap?.touchZoomRotate?.disableRotation();
-    this.busMap?.on('zoom', () => {
-      if (this.busMap?.getZoom() > 14) {
-        if (!this.mapShowBig) {
-          for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-            mapStation?.classList?.toggle('shown',true);
+    busMap.current.touchZoomRotate.disableRotation();
+  };
+  const focusStationRef = useCallback(() => {
+    if (!onMount && focusingStation && currentOpenedIndex != null) {
+      if (isMapEnabled && areAllReady() && isMapLoaded) {
+        const index = currentOpenedIndex;
+        let stationLoc = [locationData.stationInfoList.slice()[index].longitude,locationData.stationInfoList.slice()[index].latitude];
+        if (arrivingBuses[index] && arrivingBuses[index][0] && arrivingBuses[index][0].currentStation >= 0) {
+          let closestBusLoc = arrivingBuses[index][0].location;
+          let closestStationIndex = arrivingBuses[index][0].currentStation;
+          let routeCoords = [stationLoc];
+          for (let p of routeTraffic.slice(closestStationIndex, index).reverse()) {
+            let b = false;
+            for (let line of p.routeCoordinates.split(';').reverse()) {
+              if (line.includes(',')) {
+                let coords = [parseFloat(line.split(',')[0]),parseFloat(line.split(',')[1])];
+                routeCoords.push(coords);
+                if (b) break;
+                if (coords[0] === closestBusLoc[0] && coords[1] === closestBusLoc[1]) {
+                  b = true;
+                }
+              }
+            }
+            if (b) break;
           }
-          for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-            mapImportantStationText?.classList?.toggle('shown',true);
+          let abbox = bbox(helpers.lineString(routeCoords));
+          let padding = document.querySelector('#' + props.id + ' #route-bus-map').offsetHeight * 0.1;
+          busMap.current.fitBounds(abbox, {padding: padding, maxZoom: 16});
+          console.log(routeMapData, index, closestStationIndex);
+          if (routeMapData.current) {
+            for (let [i,features] of routeMapData.current.data.features.slice().entries()) {
+              if (i >= index || i < closestStationIndex) {
+                features.properties.opacity = 0.25;
+              } else {
+                features.properties.opacity = 1;
+              }
+            }
+            if (busMap.current.getSource('route') != null) busMap.current.getSource('route').setData(routeMapData.current.data);
           }
-          for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-            busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
-            busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
+          for (let i = 0; i < stationLayerGroup.current.length; i++) {
+            if (i > index || i < closestStationIndex) {
+              stationLayerGroup.current.slice().reverse()[i].getElement().style.opacity = 0;
+            } else if (i === index || i === closestStationIndex) {
+              stationLayerGroup.current.slice().reverse()[i].getElement().style.opacity = 1;
+            }
+            else {
+              stationLayerGroup.current.slice().reverse()[i].getElement().style.removeProperty('opacity');
+            }
           }
-          if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
-          this.mapShowBig = true;
-        }
-      } else {
-        if (this.mapShowBig) {
-          for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-            mapStation?.classList?.toggle('shown',false);
+          let busPlateWithSameDistance = [];
+          for (let arrivingBus of  arrivingBuses[index].slice()){
+            if (index - arrivingBus.currentStation === index - arrivingBuses[index][0].currentStation) {
+              busPlateWithSameDistance.push(arrivingBus.plate);
+            }
           }
-          for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-            mapImportantStationText?.classList?.toggle('shown',false);
+          let busElementGoingToShow = [...document.querySelectorAll('.route-bus-marker')].filter(bus => {
+            return busPlateWithSameDistance.includes(bus.id.replace('bus-',''));
+          });
+          for (let busElement of document.querySelectorAll('.route-bus-marker')) {
+            if (!busElementGoingToShow.includes(busElement)) {
+              busElement.style.setProperty('visibility', 'hidden');
+            } else {
+              busElement.style.removeProperty('visibility');
+            }
           }
-          for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-            busMarker.style.width = '14px';
-            busMarker.style.height = '14px';
+        } else {
+          if (stationLoc[0] != null && stationLoc[1] != null) {
+            busMap.current.flyTo({
+              center: stationLoc,
+              zoom: 15.5,
+            });
           }
-          if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
-          this.mapShowBig = false;
+          if (routeMapData.current) {
+            for (let features of routeMapData.current.data.features.slice()) {
+              features.properties.opacity = 1;
+            }
+            busMap.current.getSource('route').setData(routeMapData.current.data);
+          }
+          for (let i = 0; i < stationLayerGroup.current.length; i++) {
+            stationLayerGroup.current.slice().reverse()[i].getElement().style.removeProperty('opacity');
+          }
+          for (let busElement of document.querySelectorAll('.route-bus-marker')) {
+            busElement.style.removeProperty('visibility');
+          }
         }
       }
-    })
-    // this.busMap?.on('zoomend', () => {
-    //   if (this.busMap?.getZoom() > 13.5) {
-    //     for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-    //       mapStation?.classList?.toggle('shown',true);
-    //     }
-    //   } else {
-    //     for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
-    //       mapStation?.classList?.toggle('shown',false);
-    //     }
-    //   }
-    //   if (this.busMap?.getZoom() > 14) {
-    //     for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-    //       mapImportantStationText?.classList?.toggle('shown',true);
-    //     }
-    //     for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-    //       busMarker.style.width = (this.busMap?.getZoom() + 3)?.toString() + 'px';
-    //       busMarker.style.height = (this.busMap?.getZoom() + 3)?.toString() + 'px';
-    //     }
-    //     if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',4);
-    //   } else {
-    //     for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
-    //       mapImportantStationText?.classList?.toggle('shown',false);
-    //     }
-    //     for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
-    //       busMarker.style.width = '14px';
-    //       busMarker.style.height = '14px';
-    //     }
-    //     if (this.busMap?.getLayer('route')) this.busMap?.setPaintProperty('route','line-width',2);
-    //   }
-    // });
-    this.busMap?.on('load', () => this.isMapLoaded = true);
-    this.busMap?.on('styledata', () => {
-      this.isMapLoaded = true;
-      this.setupRoutesOnMap();
-    });
-  }
-
-  removeInterval() {
-    for (let interval of this.intervals) {
-      clearInterval(interval);
+    } else {
+      currentPopup = null;
+      if (isMapEnabled && isMapLoaded) {
+        for (let layer of stationLayerGroup.current) layer.getElement().style.removeProperty('opacity');
+        if (routeMapData.current != null) {
+          console.log('is this it?')
+          for (let feature of routeMapData.current.data.features) feature.properties.opacity = 1;
+          busMap.current.getSource('route').setData(routeMapData.current.data);
+        }
+        for (let busElement of document.querySelectorAll('.route-bus-marker')) {
+          busElement.style.removeProperty('visibility');
+        }
+      }
     }
-    this.intervals = [];
+  });
+
+  const areAllReady = () => {
+    let a = true;
+    for (let r of Object.values(isDataReady)) if (!r) a = false;
+    return a;
   }
 
-  resetData() {
-    this.removeInterval();
-    this.fetchController?.abort();
-    this.fetchController = new AbortController();
-    this.bridgeRoute = {};
-    this.currentWarning = 0;
-    this.currentOpenedIndex = null;
-    this.focusingStation = false;
-    this.isDataReady = {
-      bridgeData: false,
+  const changeDirection = () => {
+    fetchController.abort();
+    fetchController = new AbortController();
+    const changeDirectionIcon = document.querySelector('#route-changedirection-icon');
+    if (changeDirectionIcon) changeDirectionIcon.disabled = true;
+    setTimeout(() => {
+      const changeDirectionIcon = document.querySelector('#route-changedirection-icon');
+      if (changeDirectionIcon) changeDirectionIcon.disabled = false;
+    }, 5000);
+    const details = document.querySelectorAll('details') || [];
+    for (let detail of details) {
+      detail.removeAttribute('open')
+    }
+    bridgeRoute = {};
+    setIsDataReady = {
       busData: false,
+      bridgeData: false,
       locationData: false,
       routeData: false,
       routeTraffic: false,
+    };
+    setBusDirection(busDirection === 0 ? 1 : 0);
+    setRouteTraffic(null);
+    setRouteData(null);
+    setBusData(null);
+    setScrollToIndex(null);
+
+    for (let marker of busLayerGroup.current) marker.remove();
+    busLayerGroup.current = [];
+    for (let marker of stationLayerGroup.current) marker.remove();
+    stationLayerGroup.current = [];
+    if (isMapEnabled && isMapLoaded && busMap.current.getLayer('route')) {
+      busMap.current.removeLayer('route');
+      busMap.current.removeSource('route');
     }
-    this.setState({
-      arrivingBuses: {},
-      busColor: null,
-      busRoute: null,
-      busData: null,
-      busDirection: 0,
-      directionAvailable: '2',
-      locationData: null,
-      routeData: null,
-      routeTraffic: null,
-      shown: false,
-    });
-    if (this.state?.isMapEnabled && this.busMap != null) this.resetMap();
-    for (let func of this.eventListenersFunc) {
-      document.querySelector(func[1])?.removeEventListener(func[0], func[2]);
+
+    setSetupStationMarkersOnMap(true);
+    setSetupBusMarkersOnMap(true);
+    setSetupRoutesOnMap(true);
+
+    if (isMapLoaded && isMapEnabled && document.querySelector('.route-bus-info-container')) {
+      document.querySelector('.route-bus-info-container').setAttribute('style','');
     }
+
+    setScrollingToIndex(true);
+
   }
 
-  resetMap() {
-    this.busMap?.setCenter([113.5622406,22.166422]);
-    this.busMap?.setZoom(11);
+  useEffect(() => {
+    if (!onMount) {
+      fetchBusData();
+      fetchRouteData();
+      fetchTrafficData();
+    }
+  }, [busDirection]);
+
+  useEffect(() => {
+    if (!onMount && areAllReady() && scrollingToIndex) {
+      if (scrollToIndex != null) {
+        let container = (isMapEnabled && isMapLoaded) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+        let targetParent = document.querySelectorAll('.route-traffic')[scrollToIndex];
+        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(scrollToIndex-3,0)];
+        targetParent.parentNode.open = true;
+        if (isMapEnabled && isMapLoaded) {
+          container.scroll({
+            top: targetParent.offsetTop - document.querySelector('.route-navbar').offsetHeight, behavior: 'smooth',
+          })
+        } else {
+          container.scroll({
+            top: scrollTarget.offsetTop + document.querySelector('.route-bus-title').offsetHeight, behavior: 'smooth',
+          })
+        }
+      } else if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(scrollToNearest, () => {}, {
+          enableHighAccuracy: true,
+          maximumAge: 0,
+        });
+      }
+      setScrollingToIndex(false);
+    }
+  }, [scrollingToIndex, isDataReady])
+
+  useEffect(() => {
+    if (!onMount && !(busMap instanceof mapboxgl.Map)) setIsMapLoaded(false);
+  }, [busMap]);
+
+  useEffect(() => {
+    if (!onMount) {
+      localStorage.isRouteMapEnabled = isMapEnabled;
+      if (!isMapEnabled) {
+        if (isMapLoaded) busMap.current.remove();
+        busMap = null;
+        busLayerGroup.current = [];
+        stationLayerGroup.current = [];
+        document.querySelector('.route-bus-info-container')?.setAttribute('style', '');
+        let thisTop = document.querySelector('.route-navbar').offsetTop;
+        let titleHeight = document.querySelector('.route-bus-title').offsetHeight;
+        document.querySelector('.route-navbar').classList.toggle('stuck', thisTop > titleHeight);
+      } else if (isMapEnabled) {
+        isMapRefreshed.current = false;
+        initMap();
+        busMap.current.on('zoom', () => {
+          if (busMap.current.getZoom() > 14) {
+            if (!mapShowBig) {
+              for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+                mapStation.classList.toggle('shown',true);
+              }
+              for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+                mapImportantStationText.classList.toggle('shown',true);
+              }
+              for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+                busMarker.style.width = (busMap.current.getZoom() + 3).toString() + 'px';
+                busMarker.style.height = (busMap.current.getZoom() + 3).toString() + 'px';
+              }
+              if (busMap.current.getLayer('route')) busMap.current.setPaintProperty('route', 'line-width', 4);
+              mapShowBig = true;
+            }
+          } else {
+            if (mapShowBig) {
+              for (let mapStation of document.querySelectorAll('.route-map-station:not(.important)')) {
+                mapStation.classList.toggle('shown',false);
+              }
+              for (let mapImportantStationText of document.querySelectorAll('.destination span, .origin span')) {
+                mapImportantStationText.classList.toggle('shown',false);
+              }
+              for (let busMarker of document.querySelectorAll('.route-bus-marker')) {
+                busMarker.style.width = '14px';
+                busMarker.style.height = '14px';
+              }
+              if (busMap.current.getLayer('route')) busMap.current.setPaintProperty('route','line-width',2);
+              mapShowBig = false;
+            }
+          }
+        });;
+        busMap.current.on('load', () => setIsMapLoaded(true));
+        busMap.current.on('styledata', () => {
+          setSetupRoutesOnMap(true);
+        });
+        setSetupStationMarkersOnMap(true);
+        setSetupBusMarkersOnMap(true);
+        setSetupRoutesOnMap(true);
+        document.querySelector('.route-bus-info-container').setAttribute('style', '');
+        document.querySelector('.route-modal').scroll({top: 0});
+        document.querySelector('.route-modal').style.setProperty('--title-offset-top',`${document.querySelector('.route-bus-title').offsetTop}px`);
+      }
+    }
+  }, [isMapEnabled]);
+
+  const fetchBusData = () => {
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/bus?routeName=${props.route}&dir=${busDirection}`,{signal: fetchController.signal})
+      .then(response => response.json())
+      .then(data => {
+        props.handleNetworkError(false);
+        data.data.routeName = props.route;
+        setBusData(data.data);
+      })
+      .catch(error => {
+        console.log(error);
+        if (error instanceof TypeError) {
+          setIsDataReady(prevState => ({
+            ...prevState,
+            busData: false
+          }))
+          props.handleNetworkError(true);
+        }
+      });
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/routestation/location?routeName=${props.route}&dir=${busDirection}&lang=zh-tw`,{signal: fetchController.signal})
+      .then(response => {
+        if(response.status >= 200 && response.status < 300) {
+            return response.json();
+        } else {
+            throw new Error('Server/Network Error: ' + response.status);
+        }
+      })
+      .then(data => {
+        props.handleNetworkError(false);
+        data.data.routeName = props.route;
+        setLocationData(data.data);
+      })
+      .catch(error => {
+        console.log(error);
+        if (error instanceof TypeError) {
+          setIsDataReady(prevState => ({
+            ...prevState,
+            locationData: false
+          }))
+          props.handleNetworkError(true);
+        }
+      });
+  }
+
+  const fetchRouteData = () => {
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/macauweb/getRouteData.html?routeName=${props.route}&dir=${busDirection}&lang=zh-tw`,{signal: fetchController.signal})
+      .then(response => {
+        if(response.status >= 200 && response.status < 300) {
+            return response.json();
+        } else {
+            throw new Error('Server/Network Error: ' + response.status);
+        }
+      })
+      .then(data => {
+        props.handleNetworkError(false);
+        for (let i = 0; i < data.data.routeInfo.length-2; i++) {
+          if (data.data.routeInfo.slice()[i].staCode[0] != data.data.routeInfo.slice()[i+1].staCode[0] && data.data.routeInfo.slice()[i].staCode[0] != 'C' && data.data.routeInfo.slice()[i+1].staCode[0] != 'C') {
+            bridgeRoute[i] = [data.data.routeInfo.slice()[i].staCode[0],data.data.routeInfo.slice()[i+1].staCode[0]];
+          }
+        }
+        data.data.routeName = props.route;
+        if (props.route === "MT3" ) {
+          data.data.routeInfo[0].laneName = 'A 車道';
+          data.data.routeInfo[25].laneName = 'A 車道';
+        }
+        if (props.route === "27" ) {
+          data.data.routeInfo[0].laneName = 'B 車道';
+          data.data.routeInfo[25].laneName = 'B 車道';
+        }
+        setRouteData(data.data);
+        setDirectionAvailable(data.data.direction);
+        setIsRouteChanged(data.data.routeInfo.filter(sta => sta.suspendState === '1').length != 0);
+      })
+      .catch(error => {
+        console.log(error);
+        if (error instanceof TypeError) {
+          setIsDataReady(prevState => ({
+            ...prevState,
+            routeData: false,
+          }));
+          props.handleNetworkError(true);
+        }
+      });
+  };
+
+  const fetchTrafficData = () => {
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37011/its/Bridge/getTime.html?lang=zh_tw`,{signal: fetchController.signal})
+      .then(response => {
+        if(response.status >= 200 && response.status < 300) {
+            return response.json();
+        } else {
+            throw new Error('Server/Network Error: ' + response.status);
+        }
+      })
+      .then(data => {
+        props.handleNetworkError(false);
+        setBridgeData(data.data.timeArray);
+      })
+      .catch(error => {
+        console.log(error);
+        if (error instanceof TypeError) {
+          setIsDataReady(prevState => ({
+            ...prevState,
+            bridgeData: false,
+          }));
+          props.handleNetworkError(true);
+        }
+      });
+    
+    fetch(`${AppData.corsProxy}https://bis.dsat.gov.mo:37812/ddbus/common/supermap/route/traffic?routeCode=${'0'.repeat(5-props.route?.length) + props.route}&direction=${busDirection}&indexType=00&device=web`,{signal: fetchController.signal})
+    .then(response => {
+      if(response.status >= 200 && response.status < 300) {
+          return response.json();
+      } else {
+          throw new Error('Server/Network Error: ' + response.status);
+      }
+    })
+    .then(data => {
+      props.handleNetworkError(false);
+      data.data.routeName = props.route;
+      setTempRouteTraffic(data.data);
+    })
+    .catch(error => {
+      console.log(error);
+      if (error instanceof TypeError) {
+        setIsDataReady(prevState => ({
+          ...prevState,
+          routeTraffic: false,
+        }));
+        props.handleNetworkError(true);
+      }
+    });
+  }
+  useEffect(() => {
+    if (!onMount && routeData != null && busData != null && tempRouteTraffic != null && Object.keys(tempRouteTraffic).length > 0) {
+      let tempdata = tempRouteTraffic;
+      // let jamRouteIndex = busData.routeInfo.findIndex((sta) => sta.staCode.includes('M84'));
+      // if (jamRouteIndex > -1) {
+      //   jamRouteIndex -= 1;
+      //   tempdata[jamRouteIndex].routeTraffic = Math.max(2,Math.pow(parseInt(tempdata[jamRouteIndex].routeTraffic),2));
+      // }
+      // if (props.route === '32') {
+      //   let cloneRouteIndex = busData.routeInfo.findIndex((sta) => sta.staCode.includes('M254/1'));
+      //   if (cloneRouteIndex > -1) {
+      //     cloneRouteIndex -= 1;
+      //     tempdata[cloneRouteIndex].realTraffic = parseInt(tempdata[cloneRouteIndex].routeTraffic) / 8
+      //   }
+      // }
+      for (let route in bridgeRoute) {
+        let direction = null;
+        if (bridgeRoute[route][0] === 'T') {
+          direction = 0;
+        } else {
+          direction = 1;
+        }
+        let onbridge = null;
+        for (let point of tempdata.slice()[parseInt(route)].routeCoordinates.split(';')) {
+          if (point != '') {
+            let loc = point.split(',');
+            for (let id in bridgeCoords) {
+              let poly = helpers.polygon(bridgeCoords[id][0]);
+              let pt = helpers.point([parseFloat(loc[0]),parseFloat(loc[1])]);
+              if (booleanPointInPolygon(pt,poly)) {
+                onbridge = id;
+                break;
+              }
+            }
+            if (onbridge != null) {
+              break;
+            }
+          }
+        }
+        let timeToCrossBridgeInSec = parseInt(bridgeData.slice()[direction].times.filter(bridge => bridge.id === onbridge)[0].time);
+        if (timeToCrossBridgeInSec > -1) {
+          let speed = (bridgeCoords[onbridge].slice()[1] / timeToCrossBridgeInSec * 3.6) > 52 ? 52 : bridgeCoords[onbridge].slice()[1] / timeToCrossBridgeInSec * 3.6;
+          let traffic = 1 / (speed / 3.6 * 60 / 750);
+          tempdata[parseInt(bridgeRoute)].routeTraffic = traffic.toString();
+        }
+      }
+      setRouteTraffic(tempdata);
+    }
+  }, [tempRouteTraffic, routeTraffic, routeData, busData])
+
+  useEffect(() => {
+    focusStationRef();
+  }, [focusingStation, isDataReady, currentOpenedIndex]);
+
+  // const getArrivingBuses = (index = currentOpenedIndex) => {
+  //   if (index != null) {
+  //     setGettingArrivingBuses(true);
+  //   }
+  // }
+
+  useEffect(() => {
+    if (routeData?.routeInfo != null && routeTraffic != null) {
+      let busList = [];
+      for (let index in routeData.routeInfo) {
+        let tempArr = busList.slice(Math.max(busList.length-3,0),Math.max(busList.length,0)).reverse();
+        setArrivingBuses(prevState => ({
+          ...prevState,
+          [index]: tempArr,
+        }));
+        let busInfoLocations = locationData.busInfoList;
+        if (busInfoLocations?.length > 0 && busData.routeInfo?.length > index) {
+          for (const comingBus of busData.routeInfo[index].busInfo) {
+            try {
+              const thisRouteTraffic = routeTraffic[index].routeTraffic;
+              const bus = busInfoLocations.filter(bus => bus.busPlate === comingBus.busPlate)[0];
+              const busLoc = [parseFloat(bus.longitude),parseFloat(bus.latitude)];
+              const speed = locationData.busInfoList.filter(item => item.busPlate === comingBus.busPlate)[0].speed;
+              busList.push({
+                'plate': `${comingBus.busPlate.substring(0,2)}-${comingBus.busPlate.substring(2,4)}-${comingBus.busPlate.substring(4,6)}`,
+                'speed': speed,
+                'routeTraffic': thisRouteTraffic,
+                'location': busLoc,
+                'currentStation': parseInt(index),
+              })
+            } catch {}
+          }
+          setFocusingStation(true);
+        }
+      }
+      setGettingArrivingBuses(false);
+    }
+  }, [gettingArrivingBuses, routeTraffic, locationData]);
+
+  
+  useEffect(() => {if (!onMount) setIsDataReady(prevState => ({
+    ...prevState,
+    busData: true,
+  }))}, [busData]);
+  useEffect(() => {if (!onMount) setIsDataReady(prevState => ({
+    ...prevState,
+    locationData: true,
+  }))}, [locationData]);
+  useEffect(() => {if (!onMount) setIsDataReady(prevState => ({
+    ...prevState,
+    routeData: true,
+  }))}, [busData]);
+  useEffect(() => {if (!onMount) setIsDataReady(prevState => ({
+    ...prevState,
+    routeTraffic: true,
+  }))}, [routeTraffic]);
+  useEffect(() => {if (!onMount) setIsDataReady(prevState => ({
+    ...prevState,
+    bridgeData: true,
+  }))}, [busData]);
+
+  // const setDetailClickEvent = () => {
+  //   if (!onMount) {
+  //     const details = document.querySelectorAll('.route-modal details');
+  //     if (details.length > 0)
+  //       for (let targetDetail of details) {
+  //         targetDetail.addEventListener('click', () => {
+  //           for (let detail of details) {
+  //             if (detail !== targetDetail)
+  //               detail.removeAttribute('open');
+  //           }
+  //         });
+  //       }
+  //     else {
+  //       setTimeout(() => setDetailClickEvent(), 1);
+  //     }
+  //   }
+  // }
+
+  // useEffect(() => setDetailClickEvent(),[routeData]);
+
+  // const observer = new MutationObserver(setDetailClickEvent);
+  // useEffect(() => {
+  //   observer.observe(document.querySelector('.route-bus-info-container'), {
+  //     attributes: true,
+  //     childList: true,
+  //     subtree: true,
+  //   });
+  // },[]);
+
+  useEffect(() => {
+    if (!onMount && isMapLoaded) {
+    }
+  }, [busMap])
+
+  const removeInterval = () => {
+    for (let interval of intervals) {
+      clearInterval(interval);
+    }
+    intervals = [];
+  }
+
+  const resetMap = () => {
+    busMap.current.setCenter([113.5622406,22.166422]);
+    busMap.current.setZoom(11);
     document.querySelector('#route-bus-map')?.setAttribute('style','');
     document.querySelector('.mapboxgl-canvas')?.setAttribute('style','');
-    this.busMap?.resize();
-    if (this.stationLayerGroup != []) {
-      for (let marker of this.stationLayerGroup) {
-        marker?.remove();
+    busMap.current.resize();
+    if (stationLayerGroup.current != []) {
+      for (let marker of stationLayerGroup.current) {
+        marker.remove();
       }
     }
-    this.stationLayerGroup = [];
-    if (this.busLayerGroup != []) {
-      for (let marker of this.busLayerGroup) {
-        marker?.remove();
+    stationLayerGroup.current = [];
+    if (busLayerGroup.current != []) {
+      for (let marker of busLayerGroup.current) {
+        marker.remove();
       }
     }
-    this.busLayerGroup = [];
-    if (this.busMap?.getLayer('route')) {
-      this.busMap?.removeLayer('route');
-      this.busMap?.removeSource('route');
+    busLayerGroup.current = [];
+    if (busMap.current.getLayer('route')) {
+      busMap.current.removeLayer('route');
+      busMap.current.removeSource('route');
     }
-    this.isMapRefreshed = false;
+    isMapRefreshed.current = false;
   }
-  
-  scrollToNearest = (pos) => {
+
+  const scrollToNearest = (pos) => {
     let coords = pos.coords;
     let closestStation = 0;
-    let closestDistance = this.props?.calculateDistance(this.state?.locationData?.stationInfoList[closestStation].longitude, this.state?.locationData?.stationInfoList[closestStation].latitude, coords.longitude, coords.latitude);
-    for (let [index, station] of this.state?.locationData?.stationInfoList?.slice().entries()) {
-      let distance = this.props?.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
+    let closestDistance = 999999;
+    for (let [index, station] of locationData.stationInfoList.entries()) {
+      let distance = props.calculateDistance(station.longitude, station.latitude, coords.longitude, coords.latitude);
       if (distance < closestDistance) {
         closestStation = index; closestDistance = distance;
       }
     }
-    this.setState({closestStationIndex: closestStation}, () => {
-      let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+    setClosestStationIndex(closestStation);
+  }
+
+  useEffect(() => {
+    if (!onMount && closestStationIndex != null) {
+      const closestStation = closestStationIndex;
+      let container = (isMapEnabled && isMapLoaded) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
       let targetParent = document.querySelectorAll('.route-traffic')[closestStation];
       let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(closestStation-3,0)];
-      targetParent.parentNode.open = true;
-      container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
-    });
-  }
-
-  requestRoute() {
-    this.setState({closestStationIndex: null});
-    if (this.state?.isMapEnabled && !this.busMap) {
-      this.initMap();
+      if (targetParent != null) {
+        targetParent.parentNode.open = true;
+        container.scroll({
+          top: 
+            (isMapEnabled && isMapLoaded)
+              ? targetParent.offsetTop - document.querySelector('.route-navbar').offsetHeight
+              : scrollTarget.offsetTop + document.querySelector('.route-bus-title').offsetHeight,
+          behavior: 'smooth'
+        });
+      }
     }
-    disableBodyScroll(document.querySelector('#' + this.props?.id));
+  }, [closestStationIndex]);
+
+  const setFocusRef = useRef((a) => setFocusingStation(a));
+  useState(() => {
+    setFocusRef.current = (a) => {
+      setFocusingStation(a);
+    };
+  })
+
+  const requestRoute = () => {
+    fetchController = new AbortController();
+    setClosestStationIndex(null);
+    if (isMapEnabled && isMapLoaded) {
+      initMap();
+    }
+    disableBodyScroll(document.querySelector('#' + props.id));
     let scrollEventFunc = () => {
-      if (!this.busMap && !this.state?.isMapEnabled && document.querySelector('#' + this.props?.id + ' .route-bus-title')) {
-        let thisTop = document.querySelector('#' + this.props?.id + ' .route-navbar')?.offsetTop;
+      if (!isMapLoadedRef.current && !isMapEnabledRef.current && document.querySelector('#' + props.id + ' .route-bus-title')) {
+        let thisTop = document.querySelector('#' + props.id + ' .route-navbar').offsetTop;
         let titleHeight;
-        if (this.state?.isMapEnabled) titleHeight = document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetHeight + document.querySelector('#' + this.props?.id + ' #route-bus-map')?.offsetHeight;
-        else titleHeight = document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetHeight
-        document.querySelector('#' + this.props?.id + ' .route-navbar')?.classList?.toggle('stuck', thisTop > titleHeight);
+        if (isMapEnabledRef.current) titleHeight = document.querySelector('#' + props.id + ' .route-bus-title').offsetHeight + document.querySelector('#' + props.id + ' #route-bus-map').offsetHeight;
+        else titleHeight = document.querySelector('#' + props.id + ' .route-bus-title').offsetHeight
+        document.querySelector('#' + props.id + ' .route-navbar').classList.toggle('stuck', thisTop > titleHeight);
       } else {
-        document.querySelector('#' + this.props?.id + ' .route-navbar')?.classList?.toggle('stuck', false);
+        document.querySelector('#' + props.id + ' .route-navbar').classList.toggle('stuck', false);
       }
-      if (this.busMap && this.state?.isMapEnabled && document.querySelector('.route-bus-title')) {
-        document.querySelector('#' + this.props?.id)?.style?.setProperty('--title-offset-top',`${document.querySelector('#' + this.props?.id + ' .route-bus-title')?.offsetTop}px`);
-        this.busMap?.resize();
+      if (isMapLoadedRef.current && isMapEnabledRef.current) {
+        // document.querySelector('#' + props.id).style.setProperty('--title-offset-top',`${document.querySelector('#' + props.id + ' .route-bus-title').offsetTop}px`);
+        busMap.current.easeTo({
+          padding: {
+            bottom: document.querySelector('#' + props.id).scrollTop,
+          },
+          duration: 0,
+        })
+        if (isScrolling) clearTimeout(isScrolling);
+        isScrolling = setTimeout(() => {
+          if (isMapLoadedRef.current && isMapEnabledRef.current) {
+            focusStationRef();
+          }
+        }, 66);
       }
-      if (this.isScrolling) clearTimeout(this.isScrolling);
-      this.isScrolling = setTimeout(() => {
-        if (this.busMap && this.state?.isMapEnabled) {
-          this.focusStation(this.currentOpenedIndex, 'scroll');
-        }
-      }, 66);
     }
-    this.eventListenersFunc?.push(['scroll','#' + this.props?.id,scrollEventFunc]);
-    document.querySelector('#' + this.props?.id)?.addEventListener('scroll',scrollEventFunc);
-    document.querySelector('#' + this.props?.id).scrollTop = 0;
+    eventListenersFunc.push(['scroll', '#' + props.id, scrollEventFunc]);
+    document.querySelector('#' + props.id).addEventListener('scroll',scrollEventFunc);
+    document.querySelector('#' + props.id).scrollTop = 0;
 
-    this.fetchRouteData();
-    this.fetchBusData();
-    this.fetchTrafficData();
-    this.setupBusMarkersOnMap();
-    this.setupRoutesOnMap();
-    this.setupStationMarkersOnMap();
     let dataInterval = setInterval(() => {
-      this.fetchBusData();
-      this.setupBusMarkersOnMap();
+      fetchBusData();
+      setSetupBusMarkersOnMap(true);
     }, 5000);
     let trafficInterval = setInterval(() => {
-      this.fetchTrafficData();
-      this.setupRoutesOnMap();
-    },15000);
+      fetchTrafficData();
+      setSetupRoutesOnMap(true);
+    }, 15000);
     let liveStateInterval = setInterval(() => {
-      if (this.state.liveState === "speed") this.setState({ liveState: "station"});
-      else this.setState({ liveState: "speed"});
+      if (liveState === 'speed') setLiveState('station');
+      else setLiveState('speed');
     }, 7500);
-    this.intervals = [dataInterval, trafficInterval, liveStateInterval];
-    this.waitUntil(() => {
-      if (this.state?.scrollToIndex != null) {
-        let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-        let targetParent = document.querySelectorAll('.route-traffic')[this.state?.scrollToIndex];
-        let scrollTarget = document.querySelectorAll('.route-traffic')[Math.max(this.state?.scrollToIndex-3,0)];
-        targetParent.parentNode.open = true;
-        this.busMap?.resize();
-        container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? targetParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : scrollTarget?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
-      } else if (navigator?.geolocation) {
-        navigator.geolocation.getCurrentPosition(this.scrollToNearest);
-      }
-    })
+    intervals = [dataInterval, trafficInterval, liveStateInterval];
+    setScrollingToIndex(true);
   }
 
-  scrollToWarning() {
-    let container = (this.busMap && this.state?.isMapEnabled) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
-    let suspendedParent = document.querySelectorAll('.route-suspended')[this.currentWarning]?.parentNode;
-    container?.scroll({top: (this.busMap && this.state?.isMapEnabled) ? suspendedParent?.offsetTop - document.querySelector('.route-navbar')?.offsetHeight : suspendedParent?.offsetTop + document.querySelector('.route-bus-title')?.offsetHeight, behavior: 'smooth'});
-    let suspendedStations = this.state?.routeData?.routeInfo?.filter(station => station?.suspendState === '1');
-    if (this.currentWarning === suspendedStations?.length-1) this.currentWarning = 0;
-    else if (suspendedStations?.length !== 0) this.currentWarning++;
-  }
-  
-  setupBusMarkersOnMap() {
-    if (this.state?.isMapEnabled && !this.settingUpBusLayer) {
-      this.settingUpBusLayer = true;
-      this.waitUntil(() => {
-        if (this.state?.locationData) {
-          if (this.busLayerGroup != []) {
-            for (let marker of this.busLayerGroup) {
-              marker?.remove();
-            }
-          }
-          this.busLayerGroup = [];
-          for (let bus of this.state?.locationData?.busInfoList?.slice()?.filter(bus => bus?.speed > -1)) {
-            let busElement = document.createElement('img');
-            if (bus?.busPlate === this.state?.busData?.lastBusPlate) busElement.src = this.lastBusIconSrc();
-            else busElement.src = this.busIconSrc();
-            busElement?.classList?.add('route-bus-marker');
-            busElement.id = `bus-${bus?.busPlate?.substring(0,2)}-${bus?.busPlate?.substring(2,4)}-${bus?.busPlate?.substring(4,6)}`;
-            for (let sta of this.state?.busData?.routeInfo) {
-              for (let lbus of sta?.busInfo) {
-                if (lbus?.busPlate === bus?.busPlate && lbus?.status === '0') {
-                  busElement?.classList?.toggle('moving',true);
-                  break;
-                };
-              }
-              if (busElement?.classList?.contains('moving')) break;
-            }
-            if (this.busMap?.getZoom() <= 14) {
-              busElement.style.width = '14px';
-              busElement.style.height = '14px';
-            }
-            else {
-              busElement.style.width = (this.busMap?.getZoom() + 1.5)?.toString() + 'px';
-              busElement.style.height = (this.busMap?.getZoom() + 1.5)?.toString() + 'px';
-            }
-            let focusing = false;
-            if (this.state?.arrivingBuses[this.currentOpenedIndex] != null) {
-              for (let bus of this.state?.arrivingBuses[this.currentOpenedIndex]) {
-                if (!focusing) focusing = (busElement?.id?.includes(bus?.plate)) && (bus?.stopsRemaining === this.state?.arrivingBuses[this.currentOpenedIndex][0].stopsRemaining);
-                if (focusing) break;
-              }
-            }
-            if (this.focusingStation && !focusing) {
-              busElement?.style?.setProperty('visibility', 'hidden');
-            } else {
-              busElement?.style?.removeProperty('visibility');
-            }
-            let busPopup = new mapboxgl.Popup({closeButton: false, offset: 12})?.setHTML(`<code class='${this.state?.busColor?.toLowerCase()}'>` + bus?.busPlate + '</code>' + (bus?.speed === '-1' ? '' : ` ${bus?.speed}km/h`));
-            let busMarker = new mapboxgl.Marker(busElement)?.setLngLat([bus?.longitude, bus?.latitude])?.setPopup(busPopup)?.addTo(this.busMap);
-            this.busLayerGroup?.push(busMarker);
-          }
-        }
-        this.getArrivingBuses(this.currentOpenedIndex);
-        this.settingUpBusLayer = false;
-      });
-    }
-    else {
-      this.waitUntil(() => {
-        this.getArrivingBuses(this.currentOpenedIndex);
-      })
-    }
-  }
-  
-  setupRoutesOnMap() {
-    if (this.state?.isMapEnabled && this.busMap) {
-      this.waitUntil(() => {
-        if (this.state?.routeTraffic != null) {
-          let allCoords = [];
-          let source = {
-            'type': 'geojson',
-            'data': {
-              'type': 'FeatureCollection',
-              'features': []
-            },
-          }
-          for (let i = 0; i < this.state?.routeTraffic?.length-1; i++) {
-            if (typeof(this.state?.routeTraffic[i]?.routeCoordinates) === 'string') {
-              let routeCoordinates = [];
-              for (let routeCoordinate of this.state?.routeTraffic[i]?.routeCoordinates?.slice()?.split(';')) {
-                routeCoordinates?.push([parseFloat(routeCoordinate?.split(',')[0]),parseFloat(routeCoordinate?.split(',')[1])]);
-                allCoords?.push([parseFloat(routeCoordinate?.split(',')[0]),parseFloat(routeCoordinate?.split(',')[1])]);
-              }
-              let color;
-              if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
-                if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 1) color = '#007400';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 2) color = '#5b7c00';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 3) color = '#817f00';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 4) color = '#7e4e00';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) >= 5) color = '#7e0f00';
-                else color = '#3a576b';
-              } else {
-                if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 1) color = '#41a31a';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 2) color = '#8bb600';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 3) color = '#b7a610';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) === 4) color = '#d68400';
-                else if (Math?.ceil(parseFloat(this.state?.routeTraffic[i]?.routeTraffic)) >= 5) color = '#c70000';
-                else color = '#67a1b7';
-              }
-              routeCoordinates?.pop();
-              let opacity = 1;
-              let index = this.currentOpenedIndex;
-              if (index != null && this.focusingStation && this.state?.arrivingBuses?.[index]?.[0]) {
-                let closestStationIndex = this.state?.arrivingBuses[index][0]?.currentStation - 1;
-                if (i >= index || i < closestStationIndex) {
-                  opacity = 0.25;
-                }
-              }
-              source?.data?.features?.push({
-                'type': 'Feature',
-                'properties': {
-                  'color': color,
-                  'opacity': opacity,
-                },
-                'geometry': {
-                  'type': 'LineString',
-                  'coordinates': routeCoordinates,
-                },
-              });
-            }
-          }
-          if (this.busMap?.getLayer('route') && this.busMap?.getSource('route')) {
-            this.busMap?.getSource('route')?.setData(source?.data);
-          } else {
-            this.busMap?.addSource('route',source);
-            this.busMap?.addLayer({
-              'id': 'route',
-              'type': 'line',
-              'source': 'route',
-              'layout': {
-                'line-join': 'round',
-                'line-cap': 'round',
-              },
-              'paint': {
-                'line-color': ['get','color'],
-                'line-width': this.busMap?.getZoom() > 14 ? 4 : 2,
-                'line-opacity': ['get','opacity'],
-              }
-            });
-          }
-          if (!this.isMapRefreshed) {
-            let routeLine = helpers?.lineString(allCoords);
-            let abbox = bbox(routeLine);
-            this.busMap?.fitBounds(abbox, {padding: 50});
-            this.isMapRefreshed = true;
-          }
-        }
-      });
-    }
-  }
-  
-  setupStationMarkersOnMap() {
-    if (this.state?.isMapEnabled && this.busMap) {
-      this.waitUntil(() => {
-        if (this.state?.locationData) {
-          if (this.stationLayerGroup != []) {
-            for (let marker of this.stationLayerGroup) {
-              marker?.remove();
-            }
-          }
-          this.stationLayerGroup = [];
-          for (let [index,station] of this.state?.locationData?.stationInfoList?.slice()?.reverse()?.entries()) {
-            let stationElement,stationTextElement;
-            stationElement = document.createElement('div');
-            stationElement?.classList?.add('route-map-station');
-            if (index === this.state?.locationData?.stationInfoList?.length - 1) {
-              stationTextElement = document.createElement('span');
-              stationTextElement.innerHTML = this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName;
-              stationElement?.classList?.add('important');
-              stationElement?.classList?.add('origin');
-              stationElement?.appendChild(stationTextElement);
-            } else if (index === 0) {
-              stationTextElement = document.createElement('span');
-              stationTextElement.innerHTML = this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName;
-              stationElement?.classList?.add('important');
-              stationElement?.classList?.add('destination');
-              stationElement?.appendChild(stationTextElement);
-            } else if (AppData?.mainStations?.includes(this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staCode?.split('/')[0])) {
-              stationElement?.classList?.add('important');
-            } else {
-              if (this.busMap?.getZoom() <= 13.5) stationElement?.classList?.toggle('shown',false);
-              else stationElement?.classList?.toggle('shown',true);
-            }
-            stationElement?.addEventListener('hover',() => {
-              this.busMap.getCanvas().style.cursor = 'pointer';
-            });
-            stationElement?.addEventListener('click',(e) => {
-              const details = document.querySelectorAll('details');
-              details?.forEach((detail) => {
-                if (detail != e) detail?.removeAttribute('open');
-              });
-              this.currentPopup = this.state?.locationData?.stationInfoList?.slice()?.length - index - 1;
-              document.querySelectorAll('.route-bus-info details')[this.state?.locationData?.stationInfoList?.slice()?.length - index - 1].open = true;
-              document.querySelector('.route-bus-info-container')?.scroll({top: (1.5 * parseFloat(getComputedStyle(document.documentElement)?.fontSize) + 30)*(this.state?.locationData?.stationInfoList?.slice()?.length - index - 1), behavior: 'smooth'});
-            });
-            let stationPopup = new mapboxgl.Popup({closeButton: false, offset: 8})?.setText(`${this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staCode} ${this.state?.routeData?.routeInfo?.slice()?.reverse()[index]?.staName}`);
-            stationPopup?.on('close', () => {
-              this.unfocusStation();
-            });
-            let stationMarker = new mapboxgl.Marker(stationElement)?.setLngLat([parseFloat(station?.longitude), parseFloat(station?.latitude)])?.setPopup(stationPopup)?.addTo(this.busMap);
-            this.stationLayerGroup?.push(stationMarker);
-          }
-        }
-      });
-    }
-  }
-
-  toggleIndex = (index) => {
-    this.currentOpenedIndex = index;
-    this.getArrivingBuses(this.currentOpenedIndex);
-    let details = document.querySelectorAll('details');
-    if (this.currentPopup != null && this.stationLayerGroup) this.stationLayerGroup?.slice()?.reverse()[this.currentPopup]?.getPopup()?.remove();
-    if (details?.[index]?.hasAttribute('open')) {
-      this.focusingStation = true;
-      if (this.state?.isMapEnabled && this.busMap && this.stationLayerGroup != null) {
-        this.stationLayerGroup?.slice()?.reverse()[index]?.getPopup()?.addTo(this.busMap);
-        this.currentPopup = index;
-      }
-    }
-  }
-
-  unfocusStation() {
-    this.currentPopup = null;
-    this.focusingStation = false;
-    setTimeout(() => {
-      if (this.state?.isMapEnabled && this.busMap && !this.focusingStation) {
-        for (let i = 0; i < this.stationLayerGroup?.length; i++) {
-          this.stationLayerGroup[i]?.getElement()?.style?.removeProperty('opacity');
-        }
-        var routeSource = this.busMap?.getSource('route');
-        if (routeSource) {
-          routeSource = this.busMap?.getSource('route')?._data;
-          for (let features of routeSource?.features?.slice()) {
-            features.properties.opacity = 1;
-          }
-          this.busMap?.getSource('route')?.setData(routeSource);
-        }
-        for (let busElement of document.querySelectorAll('.route-bus-marker')) {
-          busElement?.style?.removeProperty('visibility');
-        }
-      }
-    }, 50);
-  }
-
-  waitUntil(callback,a=true) {
-    setTimeout(() => {
-      let condition = [this.isDataReady?.routeData, this.isDataReady?.locationData, this.isDataReady?.busData, this.isDataReady?.bridgeData]
-      if (a) condition?.push(this.isDataReady?.routeTraffic);
-      if (this.state?.isMapEnabled) condition?.push(this.isMapLoaded);
-      let b = true;
-      for (let item of condition) {
-        if (!item) {
-          b = false;
-          break;
-        }
-      }
-      if (b) {
-        callback();
-      } else {
-        this.waitUntil(callback,a);
-      }
-    },50);
-  }
-
-  componentDidMount() {
-    if (this.props?.isMapEnabled != null) {
-      this.setState({isMapEnabled: this.props?.isMapEnabled});
-    }
-    else if (localStorage?.isRouteMapEnabled) {
-      this.setState({isMapEnabled: localStorage?.isRouteMapEnabled === 'true'});
+  const scrollToWarning = () => {
+    let container = (isMapEnabled && isMapLoaded) ? document.querySelector('.route-bus-info-container') : document.querySelector('.route-modal');
+    let suspendedParent = document.querySelectorAll('.route-suspended')[currentWarning].parentNode;
+    let top;
+    if (isMapEnabled && isMapLoaded) {
+      top = suspendedParent.offsetTop - document.querySelector('.route-navbar').offsetHeight;
     } else {
-      localStorage.isRouteMapEnabled = 'false';
+      top = suspendedParent.offsetTop + document.querySelector('.route-bus-title').offsetHeight;
     }
-    window?.matchMedia('(prefers-color-scheme: dark)')?.addEventListener('change',
-      () => {
-        if (this.state?.isMapEnabled && this.isMapLoaded) {
-          this.isMapLoaded = false;
-          let mapStyle = 'mapbox://styles/matthewngan/ckjzsnvju0uqx17o6891qzch5';
-          if (window?.matchMedia && window?.matchMedia('(prefers-color-scheme: dark)')?.matches) {
-            mapStyle = 'mapbox://styles/matthewngan/ckjzsftuo0uik17o62fm4oahc';
+    container.scroll({top: top, behavior: 'smooth'});
+    let suspendedStations = routeData.routeInfo.filter(station => station.suspendState === '1');
+    if (currentWarning === suspendedStations.length - 1) currentWarning = 0;
+    else if (suspendedStations.length !== 0) currentWarning++;
+  }
+
+  useEffect(() => {
+    if (isMapLoaded && locationData != null) {
+      if (stationLayerGroup.current.length === 0) {
+        for (let [index, station] of locationData.stationInfoList.slice().reverse().entries()) {
+          let stationElement, stationTextElement;
+          stationElement = document.createElement('div');
+          stationElement.classList.add('route-map-station');
+          if (index === locationData.stationInfoList.length - 1) {
+            stationTextElement = document.createElement('span');
+            stationTextElement.innerHTML = routeData.routeInfo.reverse()[index].staName;
+            stationElement.classList.add('important');
+            stationElement.classList.add('origin');
+            stationElement.appendChild(stationTextElement);
+          } else if (index === 0) {
+            stationTextElement = document.createElement('span');
+            stationTextElement.innerHTML = routeData.routeInfo.reverse()[index].staName;
+            stationElement.classList.add('important');
+            stationElement.classList.add('destination');
+            stationElement.appendChild(stationTextElement);
+          } else if (AppData.mainStations.includes(routeData.routeInfo.reverse()[index].staCode.split('/')[0]))
+            stationElement.classList.add('important');
+          else {
+            if (busMap.current.getZoom() <= 13.5) stationElement.classList.toggle('shown',false);
+            else stationElement.classList.toggle('shown', true);
           }
-          this.busMap?.setStyle(mapStyle);
+          stationElement.addEventListener('hover', () => busMap.current.getCanvas().style.cursor = 'pointer');
+          stationElement.addEventListener('click', (e) => {
+            const details = document.querySelectorAll('.route-bus-info details');
+            for (let detail of details) detail.removeAttribute('open');
+            currentPopup = locationData.stationInfoList.slice().length - index - 1;
+            details[locationData.stationInfoList.length - index - 1].open = true;
+            document.querySelector('.route-bus-info-container').scroll({
+              top: (1.5 * parseFloat(getComputedStyle(document.documentElement).fontSize) + 30)*(locationData.stationInfoList.slice().length - index - 1),
+              behavior: 'smooth'
+            });
+          });
+          let stationPopup = new mapboxgl.Popup({
+            closeButton: false,
+            offset: 8,
+          }).setText(
+            `${routeData.routeInfo.reverse()[index].staCode} ${routeData.routeInfo.reverse()[index].staName}`
+          );
+          stationPopup.on('close', () => setFocusingStation(false));
+          let stationMarker = new mapboxgl.Marker(stationElement).setLngLat([
+            parseFloat(station?.longitude), parseFloat(station?.latitude)]).setPopup(stationPopup).addTo(busMap.current);
+          stationLayerGroup.current.push(stationMarker);
         }
       }
-    );
-  }
-
-  componentDidUpdate(prevProps, prevState) {
-    if (prevProps?.shown != this.props?.shown) {
-      this.setState({
-        shown: this.props?.shown,
-        busRoute: this.props?.route,
-        busColor: this.props?.color,
-        busDirection: this.props?.direction != null ? this.props?.direction : 0,
-        scrollToIndex: this.props?.index != null ? this.props?.index : null,
-      }, () => {
-        if (this.props?.shown) {
-          this.fetchController = new AbortController();
-          this.requestRoute();
-        } else {
-          this.resetData();
+    }
+  }, [busMap, isMapLoaded, locationData]);
+  useEffect(() => {
+    if (!onMount && isMapLoaded && setupBusMarkersOnMap && locationData != null) {
+      if (busLayerGroup.current.length > 0) 
+        for (let marker of busLayerGroup.current) marker.remove();
+      busLayerGroup.current = [];
+      for (let bus of locationData.busInfoList.filter(bus => bus.speed > -1)) {
+        let busElement = document.createElement('img');
+        if (bus.busPlate === busData.lastBusPlate) busElement.src = lastBusIconSrc();
+        else busElement.src = busIconSrc();
+        busElement.classList.add('route-bus-marker');
+        busElement.id = `bus-${bus.busPlate.substring(0,2)}-${bus.busPlate.substring(2,4)}-${bus.busPlate.substring(4,6)}`;
+        for (let sta of busData.routeInfo) {
+          for (let lbus of sta.busInfo) {
+            if (lbus.busPlate === bus.busPlate && lbus.status === '0') {
+              busElement.classList.toggle('moving',true);
+              break;
+            }
+          }
+          if (busElement.classList.contains('moving')) break;
         }
-      });
+        const mapZoom = busMap.current.getZoom();
+        if (mapZoom <= 14) {
+          busElement.style.width = '14px';
+          busElement.style.height = '14px';
+        } else {
+          busElement.style.width = (mapZoom + 1.5).toString() + 'px';
+          busElement.style.height = (mapZoom + 1.5).toString() + 'px';
+        }
+        let focusing = false;
+        if (arrivingBuses[currentOpenedIndex] != null) {
+          for (let bus of arrivingBuses[currentOpenedIndex]) {
+            if (!focusing) focusing = (busElement.id.includes(bus.plate)) && (currentOpenedIndex - bus.currentStation === currentOpenedIndex - arrivingBuses[currentOpenedIndex].currentStation);
+            if (focusing) break;
+          }
+        }
+        if (focusingStation && !focusing) busElement.style.setProperty('visibility', 'hidden');
+        else busElement.style.removeProperty('visibility');
+        let busPopup = new mapboxgl.Popup({
+          closeButton: false, offset: 12
+        }).setHTML(
+          `<code class='${props.color.toLowerCase()}'>${bus.busPlate}</code>${parseInt(bus.speed) === -1 ? '' : ` ${bus.speed}km/h`}`
+        );
+        let busMarker = new mapboxgl.Marker(busElement).setLngLat([bus.longitude, bus.latitude]).setPopup(busPopup).addTo(busMap.current);
+        busLayerGroup.current.push(busMarker);
+      }
+      setSetupBusMarkersOnMap(false);
+    }
+  }, [busMap, setupBusMarkersOnMap, locationData]);
+  useEffect(() => {
+    if (!onMount && isMapLoaded && setupRoutesOnMap && routeTraffic) {
+      let allCoords = [];
+      routeMapData.current.data.features = [];
+      for (let i = 0; i < routeTraffic.length-1; i++) {
+        if (routeTraffic[i].routeCoordinates) {
+          let routeCoordinates = [];
+          for (let routeCoordinate of routeTraffic[i].routeCoordinates.split(';')) {
+            const coords = [parseFloat(routeCoordinate.split(',')[0]),parseFloat(routeCoordinate.split(',')[1])]
+            routeCoordinates.push(coords);
+            allCoords.push(coords);
+          }
+          let color;
+          let traffic = Math.ceil(parseFloat(routeTraffic[i].routeTraffic));
+          if (window.matchMedia('(prefers-color-scheme: dark)')?.matches) {
+            if (traffic === 1) color = '#007400';
+            else if (traffic === 2) color = '#5b7c00';
+            else if (traffic === 3) color = '#817f00';
+            else if (traffic === 4) color = '#7e4e00';
+            else if (traffic >= 5) color = '#7e0f00';
+            else color = '#3a576b';
+          } else {
+            if (traffic === 1) color = '#41a31a';
+            else if (traffic === 2) color = '#8bb600';
+            else if (traffic === 3) color = '#b7a610';
+            else if (traffic === 4) color = '#d68400';
+            else if (traffic >= 5) color = '#c70000';
+            else color = '#67a1b7';
+          }
+          routeCoordinates.pop();
+          let opacity = 1;
+          let index = currentOpenedIndex;
+          if (index != null && focusingStation && arrivingBuses?.[index]?.[0]) {
+            let closestStationIndex = arrivingBuses[index][0].currentStation - 1;
+            if (i >= index || i < closestStationIndex) opacity = 0.25;
+          }
+          routeMapData.current.data.features.push({
+            'type': 'Feature',
+            'properties': {
+              'color': color,
+              'opacity': opacity,
+            },
+            'geometry': {
+              'type': 'LineString',
+              'coordinates': routeCoordinates,
+            }
+          });
+        }
+      }
+      if (busMap.current.getLayer('route') != null && busMap.current.getSource('route') != null)
+        busMap.current.getSource('route').setData(routeMapData.current.data);
+      else {
+        busMap.current.addSource('route',routeMapData.current);
+        busMap.current.addLayer({
+          'id': 'route',
+          'type': 'line',
+          'source': 'route',
+          'layout': {
+            'line-join': 'round',
+            'line-cap': 'round',
+          },
+          'paint': {
+            'line-color': ['get','color'],
+            'line-width': busMap.current.getZoom() > 14 ? 4 : 2,
+            'line-opacity': ['get','opacity'],
+          }
+        });
+      }
+      if (!isMapRefreshed.current) {
+        let routeLine = helpers.lineString(allCoords);
+        let abbox = bbox(routeLine);
+        busMap.current.fitBounds(abbox, {padding: 50});
+        isMapRefreshed.current = true;
+      }
+      setSetupRoutesOnMap(false);
+    }
+  }, [isMapLoaded, setupRoutesOnMap, routeTraffic]);
+
+  const toggleIndex = (index) => {
+    let details = document.querySelectorAll('.route-bus-info details');
+    if (currentPopup != null && stationLayerGroup.current.length > 0)
+      stationLayerGroup.current.reverse()[currentPopup].getPopup().remove();
+    if (details?.[index]?.hasAttribute('open')) {
+      setCurrentOpenedIndex(index);
+      for (let [i,detail] of Object.entries(details)) {
+        if (parseInt(i) !== index) {
+          detail.removeAttribute('open');
+        }
+      }
+      setFocusingStation(true);
+      if (isMapEnabled && busMap && stationLayerGroup.current.slice().reverse()[index] instanceof mapboxgl.Popup) {
+        stationLayerGroup.current.slice().reverse()[index].getPopup().addTo(busMap.current);
+        currentPopup = index;
+      }
+    } else {
+      setTimeout(() => {
+        let a = true;
+        for (let elem of details) {
+          if (elem.hasAttribute('open')) {
+            a = false;
+          }
+        }
+        if (a) setCurrentOpenedIndex(null);
+      }, 10);
     }
   }
 
-  componentWillUnmount() {
-    this.resetData();
-    this.removeInterval();
-    this.busMap?.remove();
-    this.busMap = null;
-  }
+  useEffect(() => {
+    let lme = false;
+    if (props.isMapEnabled != null) lme = props.isMapEnabled;
+    else if (localStorage.isRouteMapEnabled) lme = localStorage.isRouteMapEnabled === 'true';
+    else localStorage.isRouteMapEnabled = 'false';
+    setShown(props.shown);
+    setBusDirection(props.direction != null ? props.direction : 0);
+    setScrollToIndex(props.index);
+    setOnMount(false);
+    requestRoute();
+    fetchRouteData();
+    fetchBusData();
+    fetchTrafficData();
+    setIsMapEnabled(lme);
+    if (lme) {
+      setSetupStationMarkersOnMap(true);
+      setSetupRoutesOnMap(true);
+      setSetupBusMarkersOnMap(true);
+    }
 
-  render() {
-    return (
-      <div className={`modal route-modal ${this.state?.shown ? 'shown' : ''}`} id={this.props?.id}>
-        {
-          this.state?.shown &&
-          <RouteModalHeader color={this.state?.busColor} route={this.state?.busRoute} direction={this.state?.busDirection} routeData={this.state?.routeData} directionAvailable={this.state?.directionAvailable}></RouteModalHeader>
-        }   
-        {this.state?.isMapEnabled ? <div id='route-bus-map'></div> : null}
-        <div className='route-main-info-container'>
-          <div className='route-navbar'>
-            <button onClick={() => this.props?.returnHome()} className='col-auto btn' aria-label='Return Button'>
-              <svg xmlns='http://www?.w3?.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-left' viewBox='0 0 16 16'>
-                <path fillRule='evenodd' d='M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z'/>
-              </svg>
-            </button>
-            {
-              (this.state?.routeData && !this.state?.isMapEnabled && this.state?.shown) ?
-              <div className='col row route-navbar-title'>
-                <div className={`col-auto route-navbar-bus ${this.state?.busColor?.toLowerCase()}`}>
-                  <span>{this.state?.busRoute}</span>
-                </div>
-                <div className='route-header h5 col'>
-                  <span className='route-destination'>
-                    {AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()] ? AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()][this.state?.busDirection] : this.state?.routeData?.routeInfo[0]?.staName}&nbsp;
-                  </span>
-                  <span className='route-destination'>
-                    {
-                      this.state?.directionAvailable === '2' ?
-                      <svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='currentColor' className='bi bi-arrow-repeat' viewBox='0 0 16 16'>
-                        <path d='M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z'/>
-                        <path fillRule='evenodd' d='M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z'/>
-                      </svg>
-                      : <svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='currentColor' className='bi bi-arrow-right' viewBox='0 0 16 16'>
-                        <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
-                      </svg>
-                    }
-                    &nbsp;{AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()] ? AppData?.routeMainPoints[this.state?.busRoute?.toUpperCase()]?.slice()?.reverse()[this.state?.busDirection] : this.state?.routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
-                  </span>
-                </div>
+    return () => {
+      fetchController.abort();
+      removeInterval();
+      bridgeRoute = {};
+      currentWarning = 0;
+      setCurrentOpenedIndex(null);
+      setIsDataReady({
+        bridgeData: false,
+        busData: false,
+        locationData: false,
+        routeData: false,
+        routeTraffic: false,
+      });
+      setArrivingBuses({});
+      setBusData(null);
+      setBusDirection(0);
+      setDirectionAvailable('2');
+      setLocationData(null);
+      setRouteData(null);
+      setRouteTraffic(null);
+      setShown(false);
+      setFocusingStation(false);
+      busMap.current?.remove();
+      busMap.current = null;
+    }
+  }, []);
+
+  return (
+    <div className={`modal route-modal shown`} id={props?.id}>
+      <RouteModalHeader color={props.color} route={props.route} direction={busDirection} routeData={routeData} directionAvailable={directionAvailable}></RouteModalHeader>
+      {isMapEnabled ? <div id='route-bus-map'></div> : null}
+      <div className='route-main-info-container'>
+        <div className='route-navbar'>
+          <button onClick={() => props.returnHome()} className='col-auto btn' aria-label='Return Button'>
+            <svg xmlns='http://www?.w3?.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-left' viewBox='0 0 16 16'>
+              <path fillRule='evenodd' d='M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z'/>
+            </svg>
+          </button>
+          {
+            (routeData && !isMapEnabled) ?
+            <div className='col row route-navbar-title'>
+              <div className={`col-auto route-navbar-bus ${props.color.toLowerCase()}`}>
+                <span>{props.route}</span>
               </div>
-              : null
-            }
-            <div className='route-option-buttons'>
-              {
-                this.state?.directionAvailable === '0' &&
-                <button onClick={() => this.changeDirection()} type='button' className='col-auto btn' id='route-changedirection-icon' aria-label='Change Direction Button'>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-down-up' viewBox='0 0 16 16'>
-                    <path fillRule='evenodd' d='M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z'/>
-                  </svg>
-                </button>
-              }
-              {
-                this.state?.isRouteChanged && 
-                <button className='btn' onClick={() => this.scrollToWarning()} aria-label='Scroll to warning button'>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-exclamation-triangle-fill' viewBox='0 0 16 16'>
-                    <path fillRule='evenodd' d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/>
-                  </svg>
-                </button>
-              }
-              {
-                this.props?.mapSwitch && (this.state?.isMapEnabled ?
-                <button className='btn' onClick={() => this.disableMap()} aria-label='Disable Map button'>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map-fill' viewBox='0 0 16 16'>
-                    <path fillRule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.402-.08a.498.498 0 0 0-.196 0L5 14.09zm5 .8V1.91l.402.08a.5.5 0 0 0 .196 0L11 1.91v12.98l-.5.1-.5-.1z'/>
-                  </svg>
-                </button>
-                : <button className='btn' onClick={() => this.enableMap()} aria-label='Enable Map button'>
-                    <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map' viewBox='0 0 16 16'>
-                      <path fillRule='evenodd' d='M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.502.502 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103zM10 1.91l-4-.8v12.98l4 .8V1.91zm1 12.98l4-.8V1.11l-4 .8v12.98zm-6-.8V1.11l-4 .8v12.98l4-.8z'/>
+              <div className='route-header h5 col'>
+                <span className='route-destination'>
+                  {AppData.routeMainPoints[props.route?.toUpperCase()] ? AppData.routeMainPoints[props.route?.toUpperCase()][busDirection] : routeData?.routeInfo[0]?.staName}&nbsp;
+                </span>
+                <span className='route-destination'>
+                  {
+                    directionAvailable === '2' ?
+                    <svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='currentColor' className='bi bi-arrow-repeat' viewBox='0 0 16 16'>
+                      <path d='M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z'/>
+                      <path fillRule='evenodd' d='M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z'/>
                     </svg>
-                  </button>)
-              }
-            </div>
-          </div>
-          <div className='row'>
-            {
-              (this.state?.shown && this.state?.routeData) ?
-              <div className='col route-bus-info-container'>
-                <RouteStationBlock
-                  busIconSrc={this.busIconSrc}
-                  lastBusIconSrc={this.lastBusIconSrc}
-                  busData={this.state?.busData}
-                  color={this.state?.busColor}
-                  routeData={this.state?.routeData?.routeInfo}
-                  routeTraffic={this.state?.routeTraffic}
-                  toggleIndex={this.toggleIndex}
-                  arrivingBuses={this.state?.arrivingBuses}
-                  closestStationIndex={this.state?.closestStationIndex}
-                  gettingArrivingBuses={this.state?.gettingArrivingBuses}
-                  liveState={this.state?.liveState}
-                ></RouteStationBlock>
+                    : <svg xmlns='http://www.w3.org/2000/svg' width='10' height='10' fill='currentColor' className='bi bi-arrow-right' viewBox='0 0 16 16'>
+                      <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
+                    </svg>
+                  }
+                  &nbsp;{AppData.routeMainPoints[props.route?.toUpperCase()] ? AppData.routeMainPoints[props.route?.toUpperCase()]?.slice()?.reverse()[busDirection] : routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
+                </span>
               </div>
-              : <div className='route-loading route-bus-info-container'>載入中...</div>
+            </div>
+            : null
+          }
+          <div className='route-option-buttons'>
+            {
+              directionAvailable === '0' &&
+              <button onClick={() => changeDirection()} type='button' className='col-auto btn' id='route-changedirection-icon' aria-label='Change Direction Button'>
+                <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-arrow-down-up' viewBox='0 0 16 16'>
+                  <path fillRule='evenodd' d='M11.5 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L11 2.707V14.5a.5.5 0 0 0 .5.5zm-7-14a.5.5 0 0 1 .5.5v11.793l3.146-3.147a.5.5 0 0 1 .708.708l-4 4a.5.5 0 0 1-.708 0l-4-4a.5.5 0 0 1 .708-.708L4 13.293V1.5a.5.5 0 0 1 .5-.5z'/>
+                </svg>
+              </button>
+            }
+            {
+              isRouteChanged && 
+              <button className='btn' onClick={() => scrollToWarning()} aria-label='Scroll to warning button'>
+                <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-exclamation-triangle-fill' viewBox='0 0 16 16'>
+                  <path fillRule='evenodd' d='M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5a.905.905 0 0 0-.9.995l.35 3.507a.552.552 0 0 0 1.1 0l.35-3.507A.905.905 0 0 0 8 5zm.002 6a1 1 0 1 0 0 2 1 1 0 0 0 0-2z'/>
+                </svg>
+              </button>
+            }
+            {
+              props?.mapSwitch && (isMapEnabled ?
+              <button className='btn' onClick={() => setIsMapEnabled(false)} aria-label='Disable Map button'>
+                <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map-fill' viewBox='0 0 16 16'>
+                  <path fillRule='evenodd' d='M16 .5a.5.5 0 0 0-.598-.49L10.5.99 5.598.01a.5.5 0 0 0-.196 0l-5 1A.5.5 0 0 0 0 1.5v14a.5.5 0 0 0 .598.49l4.902-.98 4.902.98a.502.502 0 0 0 .196 0l5-1A.5.5 0 0 0 16 14.5V.5zM5 14.09V1.11l.5-.1.5.1v12.98l-.402-.08a.498.498 0 0 0-.196 0L5 14.09zm5 .8V1.91l.402.08a.5.5 0 0 0 .196 0L11 1.91v12.98l-.5.1-.5-.1z'/>
+                </svg>
+              </button>
+              : <button className='btn' onClick={() => setIsMapEnabled(true)} aria-label='Enable Map button'>
+                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' fill='currentColor' className='bi bi-map' viewBox='0 0 16 16'>
+                    <path fillRule='evenodd' d='M15.817.113A.5.5 0 0 1 16 .5v14a.5.5 0 0 1-.402.49l-5 1a.502.502 0 0 1-.196 0L5.5 15.01l-4.902.98A.5.5 0 0 1 0 15.5v-14a.5.5 0 0 1 .402-.49l5-1a.5.5 0 0 1 .196 0L10.5.99l4.902-.98a.5.5 0 0 1 .415.103zM10 1.91l-4-.8v12.98l4 .8V1.91zm1 12.98l4-.8V1.11l-4 .8v12.98zm-6-.8V1.11l-4 .8v12.98l4-.8z'/>
+                  </svg>
+                </button>)
             }
           </div>
+        </div>
+        <div className='row'>
+          {
+            (routeData) ?
+            <div className='col route-bus-info-container'>
+              <RouteStationBlock
+                calculateTime={props.calculateTime}
+                busIconSrc={busIconSrc}
+                lastBusIconSrc={lastBusIconSrc}
+                busData={busData}
+                color={props.color}
+                routeData={routeData}
+                routeTraffic={routeTraffic}
+                toggleIndex={toggleIndex}
+                arrivingBuses={arrivingBuses}
+                closestStationIndex={closestStationIndex}
+                gettingArrivingBuses={gettingArrivingBuses}
+                liveState={liveState}
+              ></RouteStationBlock>
+            </div>
+            : <div className='route-loading route-bus-info-container'>載入中...</div>
+          }
         </div>
       </div>
-    );
-  }
+    </div>
+  );
 }
 
-class RouteModalHeader extends React?.Component {
+function RouteModalHeader(props) {
 
-  constructor(props) {
-    super(props);
-  }
+  const route = props.route;
+  const routeData = props.routeData;
+  const direction = props.direction;
+  const directionAvailable = props.directionAvailable;
+  const color = props.color;
 
-  render() {
-    const route = this.props?.route;
-    const routeData = this.props?.routeData;
-    const direction = this.props?.direction;
-    const directionAvailable = this.props?.directionAvailable;
-    const color = this.props?.color;
-    return (
-      <div className='row ml-0 route-bus-title'>
-        <div className={`bus col-auto ${color?.toLowerCase()}`}>
-          <div className={route?.length > 2 ? 'h6' : 'h5'}>
-            <span>{route}</span>
-          </div>
+  return (
+    <div className='row ml-0 route-bus-title'>
+      <div className={`bus col-auto ${color?.toLowerCase()}`}>
+        <div className={route?.length > 2 ? 'h6' : 'h5'}>
+          <span>{route}</span>
         </div>
-        {
-          routeData != null ?
-          <div className='h5 route-header col'>
-            <span className='route-destination'>{AppData?.routeMainPoints?.[route?.toUpperCase()]?.[direction] || routeData?.routeInfo?.[0]?.staName || ''}&nbsp;</span>
-            <span className='route-destination'>
-              {
-                directionAvailable === '2' ?
-                <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-arrow-repeat' viewBox='0 0 16 16'>
-                  <path d='M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z'/>
-                  <path fillRule='evenodd' d='M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z'/>
-                </svg>
-                : <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-arrow-right' viewBox='0 0 16 16'>
-                  <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
-                </svg>
-              }
-              &nbsp;{AppData?.routeMainPoints?.[route?.toUpperCase()]?.slice()?.reverse()[direction] || routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
-            </span>
-          </div>
-          : <div className='h5 route-header col'>
-            <span className='route-destination'>
-              載入中...
-            </span>
-          </div>
-        }
-        {
-          route?.toLowerCase() === 'ap1x' ?
-          <span className='col-auto text-muted'>機場<br/>快線</span>
-          : (route?.toLowerCase()?.includes('ap') ?
-            <span className='col-auto text-muted'>機場<br/>專線</span>
-            : (route?.toLowerCase()?.includes('s') ? 
-              <span className='col-auto text-muted'>特班車</span>
-              : (route?.toLowerCase()?.includes('h') ? 
-                <span className='col-auto text-muted'>醫院<br/>專線</span>
-                : (route?.toLowerCase()?.includes('mt') ?
-                  <span className='col-auto text-muted'>澳氹<br/>專線</span>
-                  : (route?.toLowerCase()?.includes('n') ?
-                    <span className='col-auto text-muted'>夜間<br/>巴士</span>
-                    : (route?.toLowerCase()?.includes('x') ?
-                      <span className='col-auto text-muted'>快線</span>
-                      : null
-                    )
+      </div>
+      {
+        routeData != null ?
+        <div className='h5 route-header col'>
+          <span className='route-destination'>{AppData.routeMainPoints?.[route?.toUpperCase()]?.[direction] || routeData?.routeInfo?.[0]?.staName || ''}&nbsp;</span>
+          <span className='route-destination'>
+            {
+              directionAvailable === '2' ?
+              <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-arrow-repeat' viewBox='0 0 16 16'>
+                <path d='M11.534 7h3.932a.25.25 0 0 1 .192.41l-1.966 2.36a.25.25 0 0 1-.384 0l-1.966-2.36a.25.25 0 0 1 .192-.41zm-11 2h3.932a.25.25 0 0 0 .192-.41L2.692 6.23a.25.25 0 0 0-.384 0L.342 8.59A.25.25 0 0 0 .534 9z'/>
+                <path fillRule='evenodd' d='M8 3c-1.552 0-2.94.707-3.857 1.818a.5.5 0 1 1-.771-.636A6.002 6.002 0 0 1 13.917 7H12.9A5.002 5.002 0 0 0 8 3zM3.1 9a5.002 5.002 0 0 0 8.757 2.182.5.5 0 1 1 .771.636A6.002 6.002 0 0 1 2.083 9H3.1z'/>
+              </svg>
+              : <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='currentColor' className='bi bi-arrow-right' viewBox='0 0 16 16'>
+                <path fillRule='evenodd' d='M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z'/>
+              </svg>
+            }
+            &nbsp;{AppData.routeMainPoints?.[route?.toUpperCase()]?.slice()?.reverse()[direction] || routeData?.routeInfo?.slice()?.reverse()[0]?.staName}
+          </span>
+        </div>
+        : <div className='h5 route-header col'>
+          <span className='route-destination'>
+            載入中...
+          </span>
+        </div>
+      }
+      {
+        route?.toLowerCase() === 'ap1x' ?
+        <span className='col-auto text-muted'>機場<br/>快線</span>
+        : (route?.toLowerCase()?.includes('ap') ?
+          <span className='col-auto text-muted'>機場<br/>專線</span>
+          : (route?.toLowerCase()?.includes('s') ? 
+            <span className='col-auto text-muted'>特班車</span>
+            : (route?.toLowerCase()?.includes('h') ? 
+              <span className='col-auto text-muted'>醫院<br/>專線</span>
+              : (route?.toLowerCase()?.includes('mt') ?
+                <span className='col-auto text-muted'>澳氹<br/>專線</span>
+                : (route?.toLowerCase()?.includes('n') ?
+                  <span className='col-auto text-muted'>夜間<br/>巴士</span>
+                  : (route?.toLowerCase()?.includes('x') ?
+                    <span className='col-auto text-muted'>快線</span>
+                    : null
                   )
                 )
               )
             )
           )
-        }
-      </div>
-    );
-  }
+        )
+      }
+    </div>
+  );
 }
 
-class RouteStationBlock extends React?.Component {
-  constructor(props) {
-    super(props);
-  }
+function RouteStationBlock(props) {
+  
+  const arrivingBuses = props.arrivingBuses;
+  const busIconSrc = props.busIconSrc();
+  const lastBusIconSrc = props.lastBusIconSrc();
+  const busData = props.busData;
+  const color = props.color;
+  const routeData = props.routeData.routeInfo;
+  const routeTraffic = props.routeTraffic;
+  const toggleIndex = props.toggleIndex;
 
-  render() {
-    const arrivingBuses = this.props?.arrivingBuses;
-    const busIconSrc = this.props?.busIconSrc();
-    const lastBusIconSrc = this.props?.lastBusIconSrc();
-    const busData = this.props?.busData;
-    const color = this.props?.color;
-    const routeData = this.props?.routeData;
-    const routeTraffic = this.props?.routeTraffic;
-    const toggleIndex = this.props?.toggleIndex;
+
+  if (arrivingBuses != null
+    && busIconSrc != null
+    && lastBusIconSrc != null
+    && busData != null
+    && color != null
+    && routeData != null
+    && routeTraffic != null
+    && toggleIndex != null
+  ) {
     return (
       <div className='route-bus-info'>
         {
-          routeData?.map((station,index) => {
+          busData.routeName === props.routeData.routeName && routeData.map((station,index) => {
+            const busesAtStation = busData.routeInfo[index].busInfo.filter((bus) => bus.status === '1');
+            const busesMoving = busData.routeInfo[index].busInfo.filter((bus) => bus.status === '0');
             return (
               <details key={index} onToggle={() => toggleIndex(index)}>
                 {
                   <summary className={`route-traffic${index === routeData?.length - 1 ? ' last' : ''}${(parseFloat(routeTraffic?.[index]?.routeTraffic) <= 1 && parseFloat(routeTraffic?.[index]?.routeTraffic) > 0) ? ' green': ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 2 ? ' yellow' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 3 ? ' orange' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) === 4 ? ' red' : ''}${Math?.ceil(parseFloat(routeTraffic?.[index]?.routeTraffic)) >= 5 ? ' brown' : ''}`}>
                     <span className={
-                      `route-station-dot${busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 0 ? ' hidden' : ''}`
+                      `route-station-dot${ busesAtStation.length > 0 ? ' hidden' : ''}`
                       }></span>
                     <span className='route-station-line'></span>
                     <span className='route-station-name'>
                       {station?.staCode} {station?.staName} {station?.laneName ?
                       <code className={`lane ${station?.staCode?.split('/')[0]} ${station?.laneName[0]}`}>{station?.laneName}</code>
                       : ''
-                      } {index === this.props?.closestStationIndex ? <span>
+                      } {index === props?.closestStationIndex ? <span>
                         <small className='text-muted'>最近的車站</small>
                       </span> : ''}
                     </span>
                     {
-                      busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 0 &&
-                      <span className={`route-station-bus-icon moving ${color?.toLowerCase()}`}>
+                      busesMoving.length > 0 &&
+                      <span className={`route-station-bus-icon moving ${color.toLowerCase()}`}>
                           {
-                            busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length > 1 ?
-                            <span style={{ fontWeight: 'bold' }}>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')?.length}</span>
-                            : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '0')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
+                            busesMoving.length > 1 ?
+                            <span style={{ fontWeight: 'bold' }}>{busesMoving.length}</span>
+                            : (busData?.lastBusPlate === busesMoving[0].busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
                           }
                       </span>
                     }
                     {
-                      busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 0 && 
-                      <span className={`route-station-bus-icon ${color?.toLowerCase()}`}>
+                      busesAtStation.length > 0 && 
+                      <span className={`route-station-bus-icon ${color.toLowerCase()}`}>
                         {
-                          busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length > 1 ?
-                          <span style={{ fontWeight: 'bold' }}>{busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length}</span>
-                          : (busData?.lastBusPlate === busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />)
+                          busesAtStation.length > 1 ?
+                          <span style={{ fontWeight: 'bold' }}>{busesAtStation.length}</span>
+                          : (busData?.lastBusPlate === busesAtStation)[0]?.busPlate ? <img src={lastBusIconSrc} /> : <img src={busIconSrc} />
                         }
                       </span>
                     }
@@ -1306,9 +1301,15 @@ class RouteStationBlock extends React?.Component {
                     })
                   }
                   {
-                    arrivingBuses?.[index]?.slice()?.map(arrivingBus => 
+                    arrivingBuses?.[index]?.slice()?.map((arrivingBus) => 
                       <li key={arrivingBus?.plate}>
-                        <span><code className={color?.toLowerCase()}>{arrivingBus?.plate}</code> <small>{ this.props?.liveState === 'speed' ? `車速 ${arrivingBus?.speed}km/h` : `距離 ${arrivingBus?.distance}` }</small></span> 
+                        <span><code className={color?.toLowerCase()}>{arrivingBus?.plate}</code> <small>{
+                          props?.liveState === 'speed'
+                            ? `車速 ${arrivingBus?.speed}km/h`
+                            : (routeTraffic != null)
+                              ? `距離 ${props.calculateTime(routeTraffic,arrivingBus.currentStation+1,index,arrivingBus.location)}`
+                              : `載入中...`
+                          }</small></span> 
                         <span className={
                           `route-time-remaining route-live${parseFloat(arrivingBus?.routeTraffic) <= 1 && parseFloat(arrivingBus?.routeTraffic) > 0 ? ' green' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 2 ? ' yellow' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 3 ? ' orange' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) === 4 ? ' red' : ''}${Math?.ceil(parseFloat(arrivingBus?.routeTraffic)) >= 5 ? ' brown' : ''}`
                           }>
@@ -1316,7 +1317,7 @@ class RouteStationBlock extends React?.Component {
                             <path fillRule='evenodd' d='M3.05 3.05a7 7 0 0 0 0 9.9.5.5 0 0 1-.707.707 8 8 0 0 1 0-11.314.5.5 0 0 1 .707.707zm2.122 2.122a4 4 0 0 0 0 5.656.5.5 0 0 1-.708.708 5 5 0 0 1 0-7.072.5.5 0 0 1 .708.708zm5.656-.708a.5.5 0 0 1 .708 0 5 5 0 0 1 0 7.072.5.5 0 1 1-.708-.708 4 4 0 0 0 0-5.656.5.5 0 0 1 0-.708zm2.122-2.12a.5.5 0 0 1 .707 0 8 8 0 0 1 0 11.313.5.5 0 0 1-.707-.707 7 7 0 0 0 0-9.9.5.5 0 0 1 0-.707z'/>
                             <path d='M10 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0z'/>
                           </svg>
-                          <span> {arrivingBus?.stopsRemaining} 站</span>
+                          <span> { index - arrivingBus.currentStation } 站</span>
                           {/* {
                             arrivingBus?.duration > 30 ?
                             <span> {arrivingBus?.duration <= 3600 ? (Math?.round((arrivingBus?.duration) / 60)) + ' 分鐘' : '多於 ' + Math?.floor((arrivingBus?.duration) / 3600) + ' 小時'}</span>
@@ -1338,16 +1339,19 @@ class RouteStationBlock extends React?.Component {
                     })
                   }
                   {
-                    (busData?.routeInfo[index]?.busInfo?.filter((bus) => bus?.status === '1')?.length == 0 && (!arrivingBuses[index] || arrivingBuses[index]?.length === 0)) &&
-                    (!this.props?.gettingArrivingBuses ? <li>未發車</li> : <li>計算中...</li>)
+                    (busesAtStation.length == 0 && (!arrivingBuses[index] || arrivingBuses[index]?.length === 0)) &&
+                    (!props?.gettingArrivingBuses ? <li>未發車</li> : <li>計算中...</li>)
                   }
                 </ul>
               </details>
             )
-          })
-        }
+          }
+        )
+      }
       </div>
     );
+  } else {
+    return <div className='route-bus-info'></div>
   }
 }
 

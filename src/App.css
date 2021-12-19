@@ -1,8 +1,8 @@
 :root {
-  --padding-bottom: calc(max(constant(safe-area-inset-bottom), 5px) + 52px);
-  --padding-bottom: calc(max(env(safe-area-inset-bottom), 5px) + 52px);
-  --view-height: calc(100vh - constant(safe-area-inset-top) - max(env(safe-area-inset-bottom), 5px) - 52px - 25px - 1.2rem);
-  --view-height: calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 5px) - 52px - 25px - 1.2rem);
+  --padding-bottom: calc(max(constant(safe-area-inset-bottom), 5px) + 50px);
+  --padding-bottom: calc(max(env(safe-area-inset-bottom), 5px) + 50px);
+  --view-height: calc(100vh - constant(safe-area-inset-top) - max(env(safe-area-inset-bottom), 5px) - 50px - 25px - 1.2rem);
+  --view-height: calc(100vh - env(safe-area-inset-top) - max(env(safe-area-inset-bottom), 5px) - 50px - 25px - 1.2rem);
 }
 * {
   box-sizing: border-box;
@@ -139,6 +139,12 @@ code.lane.M18.C {
 code.lane.M18.D {
   background-color: rgb(15, 119, 189);
 }
+code.lane.M32.A {
+  background-color: rgb(40,148,255);
+}
+code.lane.M32.B {
+  background-color: rgb(255,121,188);
+}
 code.lane.M172.A {
   background-color: rgb(255, 173, 173);
   color: black;
@@ -225,9 +231,6 @@ code.lane.C690.B {
 }
 details[open] summary {
   background-color: #ddd;
-}
-.mapboxgl-canvas-container {
-  -webkit-transform:translate3d(0,0,0);
 }
 .modal {
   position: fixed;
@@ -339,7 +342,7 @@ summary .route-station-line {
   display: block;
 }
 .view-header-top {
-  padding: 60px 7.5px 12.5px;
+  padding: 12.5px 7.5px;
   padding-top: calc(constant(safe-area-inset-top) + 12.5px);
   padding-top: calc(env(safe-area-inset-top) + 12.5px);
   display: flex;
@@ -359,6 +362,7 @@ summary .route-station-line {
 .view-header-top > * {
   /* margin-left: 10px; */
   margin-bottom: 0;
+  font-size: 1rem;
 }
 /* Global Mapbox Style */
 .mapboxgl-map {

@@ -149,7 +149,7 @@ class RouteView extends React.Component {
               ?
               <div className='row'>
                 {this.state.busList.map(route => 
-                  <button key={route.routeName} aria-label={`Route ${route.routeName}`} className={`bus col-md-1 col-2 btn ${route.color.toLowerCase()}`}
+                  <button disabled={this.props.disabled} key={route.routeName} aria-label={`Route ${route.routeName}`} className={`bus col-md-1 col-2 btn ${route.color.toLowerCase()}`}
                   onClick={
                       () => this.props.toggleRouteModal(route.routeName,route.color.toLowerCase(),true,0,null,null,true)
                   }>
