@@ -722,7 +722,7 @@ class RouteModal extends React?.Component {
     let liveStateInterval = setInterval(() => {
       if (this.state.liveState === "speed") this.setState({ liveState: "station"});
       else this.setState({ liveState: "speed"});
-    }, 7500);
+    }, 5000);
     this.intervals = [dataInterval, trafficInterval, liveStateInterval];
     this.waitUntil(() => {
       if (this.state?.scrollToIndex != null) {
