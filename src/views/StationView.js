@@ -2,7 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import mapboxgl from '!mapbox-gl'; // eslint-disable-line import/no-webpack-loader-syntax
 import * as helpers from '@turf/helpers';
-import jsonData from '../stations.json';
+import jsonData from '../stations.min.json';
 import AppData from '../AppData'
 import booleanPointInPolygon from '@turf/boolean-point-in-polygon';
 import buffer from '@turf/buffer'
@@ -205,7 +205,8 @@ class StationView extends React.Component {
     this.stationMap.touchZoomRotate.disableRotation();
     let geolocate = new mapboxgl.GeolocateControl({
       fitBoundsOptions: {
-        maxZoom: 16.5
+        maxZoom: 16.5,
+        animation: false,
       },
       positionOptions: {
         enableHighAccuracy: true
